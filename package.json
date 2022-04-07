@@ -1,18 +1,14 @@
 {
-  "name": "espeak-rs",
+  "name": "@speechifyinc/espeak-rs",
   "version": "0.0.1",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
     "name": "espeak-rs",
     "triples": {
+      "defaults": false,
       "additional": [
-        "aarch64-apple-darwin",
-        "aarch64-unknown-linux-gnu",
-        "aarch64-unknown-linux-musl",
-        "aarch64-pc-windows-msvc",
-        "armv7-unknown-linux-gnueabihf",
-        "x86_64-unknown-linux-musl"
+        "x86_64-unknown-linux-gnu"
       ]
     }
   },
@@ -22,7 +18,7 @@
     "ava": "^4.0.1"
   },
   "engines": {
-    "node": ">= 10"
+    "node": ">= 16"
   },
   "scripts": {
     "artifacts": "napi artifacts",
@@ -32,15 +28,11 @@
     "test": "ava",
     "version": "napi version"
   },
-  "optionalDependencies": {
-    "espeak-rs-win32-x64-msvc": "0.0.1",
-    "espeak-rs-darwin-x64": "0.0.1",
-    "espeak-rs-linux-x64-gnu": "0.0.1",
-    "espeak-rs-darwin-arm64": "0.0.1",
-    "espeak-rs-linux-arm64-gnu": "0.0.1",
-    "espeak-rs-linux-arm64-musl": "0.0.1",
-    "espeak-rs-win32-arm64-msvc": "0.0.1",
-    "espeak-rs-linux-arm-gnueabihf": "0.0.1",
-    "espeak-rs-linux-x64-musl": "0.0.1"
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SpeechifyInc/espeak-rs"
   }
 }
