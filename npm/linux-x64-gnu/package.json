@@ -1,5 +1,5 @@
 {
-  "name": "espeak-rs-linux-x64-gnu",
+  "name": "@speechifyinc/espeak-rs-linux-x64-gnu",
   "version": "0.0.1",
   "os": [
     "linux"
@@ -13,7 +13,10 @@
   ],
   "license": "MIT",
   "engines": {
-    "node": ">= 10"
+    "node": ">= 16"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "libc": [
     "glibc"
