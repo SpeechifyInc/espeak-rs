@@ -1,0 +1,18 @@
+{
+  "name": "espeak-rs-darwin-arm64",
+  "version": "0.0.1",
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "main": "espeak-rs.darwin-arm64.node",
+  "files": [
+    "espeak-rs.darwin-arm64.node"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">= 10"
+  }
+}
