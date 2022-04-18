@@ -1,5 +1,3 @@
-#![allow(non_upper_case_globals)]
-
 extern crate napi;
 
 use espeakng_sys::*;
@@ -120,71 +118,4 @@ unsafe extern "C" fn synth_callback(
     _events: *mut espeak_EVENT,
 ) -> c_int {
     0
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use markov::Chain;
-    use std::process::Command;
-    use std::{
-        fs,
-        io::{self, BufRead, BufReader},
-    };
-
-    use futures::executor::block_on;
-    #[test]
-    fn does_not_panic() {
-        let espeak = EspeakAddon::default();
-        let result = block_on(espeak.text_to_phonemes("of the".to_string()));
-        println!("{}", result);
-    }
-
-    fn setup_markov() -> io::Result<Chain<String>> {
-        let entries = fs::read_dir("./testfiles")?
-            .map(|result| result.map(|item| item.path()))
-            .collect::<Result<Vec<_>, io::Error>>()?;
-        let mut chain: Chain<String> = Chain::new();
-        entries.iter().for_each(|item| {
-            let file = fs::File::open(item).unwrap();
-            let buf_reader = BufReader::new(file);
-            buf_reader.lines().for_each(|line| {
-                if let Ok(content) = line {
-                    chain.feed_str(&content);
-                }
-            })
-        });
-
-        Ok(chain)
-    }
-
-    fn call_espeak_cli(text: &str) -> String {
-        let result = Command::new("sh")
-            .arg("-c")
-            .arg(format!("espeak-ng \"{}\" -q -x --ipa -v en-us", text))
-            .output()
-            .expect("cli execution failed")
-            .stdout;
-        let output = String::from_utf8_lossy(&result).into_owned();
-        output
-    }
-    #[test]
-    fn markov_test_once() {
-        let chain = setup_markov().expect("Failed to create markov chain");
-        let espeak = EspeakAddon::default();
-        let random_input = chain.generate_str();
-        let result = block_on(espeak.text_to_phonemes(random_input.clone()));
-        let result_from_cli = call_espeak_cli(&random_input);
-        println!(
-            "Input: {} \nPhonemes: {}CLI: {}",
-            &random_input, &result, &result_from_cli
-        );
-        assert!(result.eq(&result_from_cli) || result_from_cli.is_empty())
-    }
-
-    #[test]
-    fn markov_test_lot() {
-        const n: u32 = 10;
-        (1..n).for_each(|_| markov_test_once());
-    }
 }
