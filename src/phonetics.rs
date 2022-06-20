@@ -1,5 +1,54 @@
-const phonemeSet: [&str, 2] = [
-  " ",
+use crate::text_to_phonemes;
+use regex::Regex;
+
+// https://github.com/espeak-ng/espeak-ng/issues/694
+fn removeAdditionalSeparators(string: &str) -> &str {
+    Regex::new("_+").unwrap().replace_all(string, "_").replace("_ ", " ").as_str()
+}
+
+fn remove_line_breaks(string: &str) -> &str { string.replace("\n", " ").as_str() }
+fn remove_extra_spaces(string: &str) -> &str  {string.replace("  ", " ").as_str()}
+fn remove_non_phonetic_chars(string: &str) -> &str { string.chars().filter(|char| phoneme_set.contains(char) ).collect() }
+
+fn sanitize_espeak_output(string: &str) -> &str {
+  remove_non_phonetic_chars(remove_extra_spaces(remove_line_breaks(removeAdditionalSeparators(string))))
+}
+
+// TODO: Handle pure whitespace
+/** Adds the starting and ending whitespace from the source string to the target string */
+fn preserve_boundary_whitespace(source: &str, target: &str) -> &str {
+  let starting_whitespace_len = source.len() - source.trim_start().len();
+  let ending_whitespace_len = source.len() - source.trim_end().len();
+
+  let starting_whitespace = source[..starting_whitespace_len];
+  let main_text = target.trim();
+  let ending_whitespace = (if ending_whitespace_len == 0 { "" } else { &source[(source.len() - ending_whitespace_len)..source.len()]});
+  return (
+    starting_whitespace +
+    main_text +
+    ending_whitespace
+  ).as_str();
+}
+
+fn collapseWhitespace(string: &str) -> &str { Regex::new("\\s*([!,-.:;? '()])\\s*").replace(string, "$1") }
+
+fn to_phonetics(text: &str) -> &str { sanitize_espeak_output(text_to_phonemes(text)) }
+
+pub async fn stringToPhonetics(
+  text: Vec<&str>,
+  preserve_punctuation: bool
+) -> Vec<&str> {
+  if (preserve_punctuation) {
+    let split_texts = extract_punctuation(Regex::new("([0-9]),([0-9])").replace(text, "$1$2"));
+    let phonemized_texts = split_texts.iter().map(to_phonetics);
+
+    let combined_phonemized_text = restore_punctuation(split_texts.punctuations, phonemized_texts);
+    remove_line_breaks(collapse_whitespace(preserve_boundary_whitespace(text, combined_phonemized_text)))
+  }
+  return to_phonetics(text);
+}
+
+const phoneme_set: [&str; 2] = [" ",
   "!",
   "'",
   "(",
@@ -126,62 +175,3 @@ const phonemeSet: [&str, 2] = [
   "ᵻ",
   "ⱱ"
 ];
-
-// https://github.com/espeak-ng/espeak-ng/issues/694
-fn removeAdditionalSeparators(str: &str) -> &str {
- str.replaceAll(/_+/g, '_').replaceAll(/_ /g, ' ')
-}
-
-fn removeLineBreaks(str: &str) { str.replaceAll('\n', ' ') }
-fn removeExtraSpaces(str: &str)  {str.replaceAll('  ', ' ')}
-fn removeNonPhoneticChars(str: &str) =>
-  Array.from(str).filter(phonemeSet.has.bind(phonemeSet)).join('');
-
-const sanitizeEspeakOutput = pipe(
-  removeAdditionalSeparators,
-  removeLineBreaks,
-  removeExtraSpaces,
-  removeNonPhoneticChars
-);
-
-// TODO: Handle pure whitespace
-/** Adds the starting and ending whitespace from the source string to the target string */
-const preserveBoundaryWhitespace = (source: string, target: string) => {
-  const startingWhitespace = source.length - source.trimStart().length;
-  const endingWhitespace = source.length - source.trimEnd().length;
-  return (
-    source.slice(0, startingWhitespace) +
-    target.trim() +
-    (endingWhitespace === 0 ? '' : source.slice(-endingWhitespace))
-  );
-};
-
-const collapseWhitespace = (str: string) => str.replace(/\s*([!,-.:;? '()])\s*/, '$1');
-
-const toPhonetics = (texts: string[]) =>
-  textToPhonemes(texts).then((texts) => texts.map(sanitizeEspeakOutput));
-
-export async function stringToPhonetics(
-  texts: string[],
-  { preservePunctuation = false } = {}
-): Promise<string[]> {
-  if (preservePunctuation) {
-    const splitTexts = texts
-      .map((text) => text.replaceAll(/([0-9]),([0-9])/g, '$1$2'))
-      .map((text) => ({ originalText: text, ...extractPunctuation(text) }));
-    const phonemizedTexts = await toPhonetics(splitTexts.flatMap(prop('texts')));
-    let pos = 0;
-    return splitTexts.map(({ originalText, texts, punctuations }) => {
-      const phonemized = phonemizedTexts.slice(pos, pos + texts.length);
-      pos += texts.length;
-      const process = pipe(
-        (phonemized) => restorePunctuation(punctuations, phonemized),
-        (phonemized) => preserveBoundaryWhitespace(originalText, phonemized),
-        collapseWhitespace,
-        removeLineBreaks
-      );
-      return process(phonemized);
-    });
-  }
-  return toPhonetics(texts);
-}

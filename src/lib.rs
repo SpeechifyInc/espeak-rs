@@ -1,3 +1,5 @@
+mod phonetics;
+
 extern crate napi;
 use std::collections::HashMap;
 
@@ -153,17 +155,12 @@ lazy_static! {
 }
 
 #[napi]
-pub async fn text_to_phonemes(texts: Vec<String>) -> Vec<String> {
+pub async fn text_to_phonemes(text: String) -> String {
   let mut speaker = espeakng::initialise(None).unwrap().lock();
-  texts
-    .iter()
-    .map(|text| {
-      speaker
-        .text_to_phonemes(text.as_str(), espeakng::PhonemeGenOptions::Standard)
-        .unwrap()
-        .unwrap()
-    })
-    .collect()
+  speaker
+    .text_to_phonemes(text.as_str(), espeakng::PhonemeGenOptions::Standard)
+    .unwrap()
+    .unwrap()
 }
 
 #[napi(object)]
