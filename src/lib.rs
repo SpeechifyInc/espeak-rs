@@ -154,8 +154,7 @@ lazy_static! {
   .unwrap();
 }
 
-#[napi]
-pub async fn text_to_phonemes(text: String) -> String {
+pub fn text_to_phonemes(text: String) -> String {
   let mut speaker = espeakng::initialise(None).unwrap().lock();
   speaker
     .text_to_phonemes(text.as_str(), espeakng::PhonemeGenOptions::Standard)
