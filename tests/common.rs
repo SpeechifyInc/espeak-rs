@@ -1,7 +1,7 @@
 use markov::Chain;
 use std::{
   fs,
-  io::{self, BufRead, BufReader},
+  io::{self, BufRead, BufReader}, process::Command,
 };
 
 pub fn setup_markov() -> io::Result<Chain<String>> {
@@ -20,4 +20,16 @@ pub fn setup_markov() -> io::Result<Chain<String>> {
   });
 
   Ok(chain)
+}
+
+
+pub fn call_espeak_cli(text: &str) -> String {
+  let result = Command::new("sh")
+    .arg("-c")
+    .arg(format!("espeak-ng \"{}\" -q -x --ipa -v en-us", text))
+    .output()
+    .expect("cli execution failed")
+    .stdout;
+  let output = String::from_utf8_lossy(&result).into_owned();
+  output
 }
