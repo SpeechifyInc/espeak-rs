@@ -1,11 +1,9 @@
-mod phonetics;
+pub mod phonetics;
 
-extern crate napi;
 use std::collections::HashMap;
 
 #[macro_use]
 extern crate lazy_static;
-use napi_derive::napi;
 use regex::Regex;
 
 lazy_static! {
@@ -162,7 +160,6 @@ pub fn text_to_phonemes(text: String) -> String {
     .unwrap()
 }
 
-#[napi(object)]
 pub struct Chunk {
   pub value: String,
   pub valueWord: String,
@@ -172,7 +169,6 @@ pub struct Chunk {
   pub endTime: f64,
 }
 
-#[napi]
 pub fn transform_raw_phoneme_timestamps(
   phoneme_list: Vec<String>,
   end_times: Vec<f64>,

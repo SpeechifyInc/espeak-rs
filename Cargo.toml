@@ -22,7 +22,7 @@ napi-build = "1.2.1"
 [dev-dependencies]
 markov = "1.1.0"
 pretty_assertions = "1.2.1"
-criterion = { version = "0.3.0", features=["async_tokio"] }
+criterion = { version = "0.3.0", features=["async_tokio", "html_reports"] }
 tokio = { version = "1", features = ["rt", "macros"]}
 
 [profile.release]
@@ -30,5 +30,5 @@ lto = true
 
 
 [[bench]]
-name = "espeak_perf"
+name = "phonetics"
 harness = false
