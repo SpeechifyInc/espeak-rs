@@ -12,11 +12,9 @@ path = "src/lib.rs"
 # https://nodejs.org/api/n-api.html#node-api-version-matrix
 napi = { version = "2.2.0", default-features = false, features = ["napi8", "async", "tokio_rt"] }
 napi-derive = "2.2.0"
-libc = "0.2"
-cfile = "0.5.1"
-futures = "0.3"
-espeakng-sys = "0.1.1"
 lazy_static = "1.4.0"
+espeakng = "0.1.1"
+regex = "1"
 
 [build-dependencies]
 napi-build = "1.2.1"
@@ -24,7 +22,7 @@ napi-build = "1.2.1"
 [dev-dependencies]
 markov = "1.1.0"
 pretty_assertions = "1.2.1"
-criterion = { version = "0.3.0", features=["async_tokio"] } 
+criterion = { version = "0.3.0", features=["async_tokio"] }
 tokio = { version = "1", features = ["rt", "macros"]}
 
 [profile.release]
