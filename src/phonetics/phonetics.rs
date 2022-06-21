@@ -1,6 +1,7 @@
 use crate::phonetics::punctuation::{extract_punctuation, restore_punctuations};
 use crate::text_to_phonemes;
 use regex::Regex;
+use napi_derive::napi;
 
 const PHONEME_SET: [&str; 126] = [
   " ", "!", "'", "(", ")", ",", "-", ".", ":", ";", "?", "a", "b", "c", "d", "e", "f", "h", "i",
@@ -13,7 +14,7 @@ const PHONEME_SET: [&str; 126] = [
 ];
 
 // https://github.com/espeak-ng/espeak-ng/issues/694
-pub fn removeAdditionalSeparators(string: &str) -> String {
+fn remove_additional_separators(string: &str) -> String {
   Regex::new("_+")
     .unwrap()
     .replace_all(string, "_")
@@ -21,28 +22,28 @@ pub fn removeAdditionalSeparators(string: &str) -> String {
     .to_owned()
 }
 
-pub fn remove_line_breaks(string: &str) -> String {
+fn remove_line_breaks(string: &str) -> String {
   string.replace("\n", " ").to_owned()
 }
-pub fn remove_extra_spaces(string: &str) -> String {
+fn remove_extra_spaces(string: &str) -> String {
   string.replace("  ", " ").to_owned()
 }
-pub fn remove_non_phonetic_chars(string: &str) -> String {
+fn remove_non_phonetic_chars(string: &str) -> String {
   string
     .chars()
     .filter(|char| PHONEME_SET.contains(&(char.to_string().as_str())))
     .collect()
 }
 
-pub fn sanitize_espeak_output(string: &str) -> String {
+fn sanitize_espeak_output(string: &str) -> String {
   remove_non_phonetic_chars(&remove_extra_spaces(&remove_line_breaks(
-    &removeAdditionalSeparators(string),
+    &remove_additional_separators(string),
   )))
 }
 
 // TODO: Handle pure whitespace
 /** Adds the starting and ending whitespace from the source string to the target string */
-pub fn preserve_boundary_whitespace(source: &str, target: &str) -> String {
+fn preserve_boundary_whitespace(source: &str, target: &str) -> String {
   let starting_whitespace_len = source.len() - source.trim_start().len();
   let ending_whitespace_len = source.len() - source.trim_end().len();
 
@@ -57,7 +58,7 @@ pub fn preserve_boundary_whitespace(source: &str, target: &str) -> String {
   format!("{}{}{}", starting_whitespace, main_text, ending_whitespace)
 }
 
-pub fn collapse_whitespace(string: &str) -> String {
+fn collapse_whitespace(string: &str) -> String {
   Regex::new("\\s*([!,-.:;? '()])\\s*")
     .unwrap()
     .replace(string, "$1")
@@ -65,11 +66,12 @@ pub fn collapse_whitespace(string: &str) -> String {
 }
 
 pub fn to_phonetics(text: &str) -> String {
-  sanitize_espeak_output(&text_to_phonemes(text.to_owned()))
+  sanitize_espeak_output(&text_to_phonemes(text))
 }
 
-pub async fn stringToPhonetics(text: &str, preserve_punctuation: bool) -> String {
-  if (preserve_punctuation) {
+
+pub async fn string_to_phonetics(text: &str, preserve_punctuation: bool) -> String {
+  if preserve_punctuation {
     let res = Regex::new("([0-9]),([0-9])")
       .unwrap()
       .replace(text, "$1$2")
@@ -86,4 +88,9 @@ pub async fn stringToPhonetics(text: &str, preserve_punctuation: bool) -> String
     .to_owned();
   }
   return to_phonetics(text);
+}
+
+#[napi]
+pub async fn phonemize(text: String, preserve_punctuation: bool) -> String {
+    string_to_phonetics(text.as_str(), preserve_punctuation).await
 }

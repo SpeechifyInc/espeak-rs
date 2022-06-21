@@ -1,0 +1,22 @@
+diff --git a/src/lib.rs b/src/lib.rs
+index c3d271d..b6c2c5f 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -84,7 +84,7 @@ pub struct Speaker {
+ }
+ 
+ impl Speaker {
+-    pub const DEFAULT_VOICE: &'static str = "gmw/en";
++    pub const DEFAULT_VOICE: &'static str = "en-us";
+ 
+     fn initialise(voice_path: Option<&str>) -> Result<Self> {
+         unsafe extern "C" fn synth_callback(wav: *mut i16, sample_count: i32, events: *mut bindings::espeak_EVENT) -> i32 {
+@@ -321,7 +321,7 @@ impl Speaker {
+             CStr::from_ptr(bindings::espeak_TextToPhonemes(
+                 &mut text_nul_term.as_ptr().cast() as *mut *const std::ffi::c_void,
+                 bindings::espeakCHARS_UTF8 as i32,
+-                0
++                2
+             ))
+         };
+ 

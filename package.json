@@ -21,6 +21,7 @@
     "node": ">= 16"
   },
   "scripts": {
+    "prepare": "git submodule update --init --recursive && git apply espeakng-rs.patch --directory=espeakng-rs",
     "artifacts": "napi artifacts",
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",

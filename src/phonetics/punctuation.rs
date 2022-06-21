@@ -1,8 +1,7 @@
 use regex::Regex;
-use std::fmt::Display;
 
 pub fn extract_punctuation(text: &str) -> (Vec<String>, Vec<String>) {
-  let split_text_regex = Regex::new(r"([!(),-.:;?]+)").unwrap();
+  let split_text_regex = Regex::new("([!(),-.:;?]+)").unwrap();
   //   let (texts, punctuations) =
   let splits = split_text_regex.split(&text).collect::<Vec<&str>>();
   let captures = split_text_regex
@@ -20,13 +19,10 @@ pub fn whitespace_replacer(text: &str, replacer: &str, last_remaining_chars: &mu
   let start = text.len() - text.trim_start().len();
   let end = text.len() - text.trim_end().len();
 
-  println!("{} {}", start, end);
-  let start_trimmed = &text[0..usize::min(start, *last_remaining_chars)];
-  println!("{}", &start_trimmed);
+  let start_trimmed = &text[usize::min(start, *last_remaining_chars)..text.len()];
   *last_remaining_chars = usize::max(0, replacer.len() - end);
 
-  start_trimmed[0..start_trimmed.len() - usize::min(end, replacer.len()) + replacer.len()]
-    .to_string()
+  start_trimmed[0..(start_trimmed.len() - usize::min(end, replacer.len()))].to_string() + replacer
 }
 
 pub fn add_strings_replacing_whitespace(str1: &str, str2: &str) -> String {
@@ -40,8 +36,14 @@ pub fn restore_punctuations(punctuations: Vec<String>, texts: Vec<String>) -> St
   let mut last_remaining_chars: usize = 0;
   texts
     .iter()
-    .zip(punctuations.iter())
-    .map(|(text, punctuation)| whitespace_replacer(text, punctuation, &mut last_remaining_chars))
+    .enumerate()
+    .map(|(index, text)| {
+      whitespace_replacer(
+        text,
+        punctuations.get(index).unwrap_or(&("".to_string())),
+        &mut last_remaining_chars,
+      )
+    })
     .collect::<Vec<_>>()
     .join("")
 }
@@ -50,7 +52,7 @@ pub fn restore_punctuations(punctuations: Vec<String>, texts: Vec<String>) -> St
 mod tests {
   use crate::phonetics::punctuation::restore_punctuations;
 
-use super::extract_punctuation;
+  use super::extract_punctuation;
   #[test]
   fn test_extract_punctuation() {
     let text = "Hey, this is a, with a bunch of punctuations!";
@@ -60,16 +62,14 @@ use super::extract_punctuation;
 
     assert_eq!(result_text, texts);
     assert_eq!(punctuations, result_punctuations);
-
   }
 
-  #[test] 
+  #[test]
   fn test_restore_punctuations() {
     let text = "Hey, this is a, with a bunch of punctuations!";
     let (texts, punctuations) = extract_punctuation(text);
 
     let result = restore_punctuations(punctuations, texts);
     println!("{}", result);
-
   }
 }

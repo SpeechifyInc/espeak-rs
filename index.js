@@ -236,7 +236,8 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { textToPhonemes, transformRawPhonemeTimestamps } = nativeBinding
+const { forceAlignPhonemesGraphemes, forceAlignPhonemesGraphemesList, phonemize } = nativeBinding
 
-module.exports.textToPhonemes = textToPhonemes
-module.exports.transformRawPhonemeTimestamps = transformRawPhonemeTimestamps
+module.exports.forceAlignPhonemesGraphemes = forceAlignPhonemesGraphemes
+module.exports.forceAlignPhonemesGraphemesList = forceAlignPhonemesGraphemesList
+module.exports.phonemize = phonemize
