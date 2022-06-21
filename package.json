@@ -21,6 +21,7 @@
     "node": ">= 16"
   },
   "scripts": {
+    "prepare": "git submodule update --init --recursive && git apply espeakng-rs.patch --directory=espeakng-rs",
     "artifacts": "napi artifacts",
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
@@ -34,5 +35,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/SpeechifyInc/espeak-rs"
+  },
+  "optionalDependencies": {
+    "@speechifyinc/espeak-rs-linux-x64-gnu": "0.0.1"
   }
 }

@@ -1,190 +1,307 @@
-#![allow(non_upper_case_globals)]
+pub mod align;
+mod leven;
+pub mod phonetics;
 
 extern crate napi;
-
-use espeakng_sys::*;
-use std::ffi::{c_void, CStr, CString};
-use std::os::raw::{c_char, c_int, c_short};
-
+use align::is_word;
 use napi_derive::napi;
 
-#[napi]
-pub struct EspeakAddon {
-    pub voice_name: String,
-    pub options: u32,
-    pub buffer_len: i32,
-    has_initialized: bool
+use std::collections::HashMap;
+
+#[macro_use]
+extern crate lazy_static;
+use regex::Regex;
+
+lazy_static! {
+  pub static ref COMBINED_PHONEME_MAPPING: HashMap<&'static str, [&'static str; 2]> =
+    HashMap::from([
+      ("ðæɾə", ["ðæɾ", "ə"]),
+      ("fɚðə", ["fɚ", "ðə"]),
+      ("fɚɹə", ["fɚɹ", "ə"]),
+      ("ɪnðə", ["ɪn", "ðə"]),
+      ("ɔnðɪ", ["ɔn", "ðɪ"]),
+      ("dɪdnɑːt", ["dɪd", "nɑːt"]),
+      ("wɪððə", ["wɪð", "ðə"]),
+      ("ʌvðə", ["ʌv", "ðə"]),
+      ("ʌvðɪ", ["ʌv", "ðɪ"]),
+      ("wʌzðə", ["wʌz", "ðə"]),
+      ("dʌznɑːt", ["dʌz", "nɑːt"]),
+      ("aʊɾəv", ["aʊɾ", "əv"]),
+      ("fɹʌmðə", ["fɹʌm", "ðə"]),
+      ("ðætwʌn", ["ðæt", "wʌn"]),
+      ("ðætðɪ", ["ðæt", "ðɪ"]),
+      ("meɪhɐv", ["meɪ", "hɐv"]),
+      ("təbi", ["tə", "bi"]),
+    ]);
+  pub static ref PHONEME_TO_CHAR_MAPPING: HashMap<&'static str, &'static str> = HashMap::from([
+    ("^", ""),
+    (".", ""),
+    ("~", ""),
+    (":", ""),
+    (";", ""),
+    (",", ""),
+    ("?", ""),
+    ("!", ""),
+    ("ʊ", ""),
+    ("ː", ""),
+    ("t", "t"),
+    ("u", "u"),
+    ("ɛ", "e"),
+    ("k", "c"),
+    ("s", "s"),
+    ("ə", "e"),
+    ("l", "l"),
+    ("n", "n"),
+    ("w", "w"),
+    ("b", "b"),
+    ("a", "a"),
+    ("ɪ", "i"),
+    ("f", "f"),
+    ("ɔ", "o"),
+    ("ɹ", "r"),
+    ("d", "d"),
+    ("v", "v"),
+    ("p", "p"),
+    ("ɚ", "er"),
+    ("z", "s"),
+    ("j", "j"),
+    ("o", "o"),
+    ("ð", "th"),
+    ("h", "h"),
+    ("ɾ", "t"),
+    ("i", "e"),
+    ("ɑ", "a"),
+    ("ɡ", "g"),
+    ("ɐ", "a"),
+    ("ɜ", "er"),
+    ("ʒ", "s"),
+    ("ʌ", "o"),
+    ("ʃ", "ur"),
+    ("ŋ", "ng"),
+    ("æ", "a"),
+    ("ᵻ", "e"),
+    ("e", "e"),
+    ("m", "m"),
+    ("θ", "th"),
+  ]);
+  pub static ref PHONEME_WORD_TO_WORD_MAPPING: HashMap<&'static str, &'static str> =
+    HashMap::from([
+      ("n", "an"),
+      ("ə", "the"),
+      ("ðɪ", "the"),
+      ("juː", "you"),
+      ("ʌs", "us"),
+      ("t", "to"),
+      ("wɹ", "where"),
+      ("wɪl", "will"),
+      ("tə", "to"),
+      ("eɪ", "may"),
+      ("meɪ", "may"),
+      ("nɑːt", "not"),
+      ("ɪl", "will"),
+      ("baɪ", "by"),
+      ("bɪ", "by"),
+      ("æt", "that"),
+      ("hæv", "have"),
+      ("weɪ", "way"),
+    ]);
+  pub static ref LETTER_PHONEMES: [&'static str; 26] = [
+    "ɐ",
+    "bi",
+    "si",
+    "di",
+    "i",
+    "ɛf",
+    "dʒi",
+    "eɪtʃ",
+    "aɪ",
+    "dʒeɪ",
+    "keɪ",
+    "ɛl",
+    "ɛm",
+    "ɛn",
+    "oʊ",
+    "pi",
+    "kju",
+    "ɑɹ",
+    "ɛs",
+    "ti",
+    "ju",
+    "vi",
+    "dʌbəlju",
+    "ɛks",
+    "waɪ",
+    "zi",
+  ];
+  pub static ref PHONETIC_PUNCTUATION: [&'static str; 9] =
+    ["^", ".", "~", ":", ";", ",", "?", "!", " "];
+  pub static ref PHONETIC_WORD_TAG_BOUNDARIES: [&'static str; 4] = ["<w>", "<s>", "</w>", "</s>"];
+  pub static ref PHONETIC_WORD_BOUNDARY: [&'static str; 22] = [
+    "!", "(", ")", "-", ";", ":", ",", ".", "?", "¡", "¿", "—", "…", "'", "«", "»", "“", "”", " ",
+    "\n", "</w>", "</s>",
+  ];
+  pub static ref ACRONYM_REGEX: Regex = Regex::new(
+    format!(
+      "^({}){{3,}}s?$",
+      LETTER_PHONEMES.map(|str| format!("({})", str)).join("|")
+    )
+    .as_str(),
+  )
+  .unwrap();
+  pub static ref ACRONYM_REGEX_SPLIT: Regex = Regex::new(
+    format!(
+      "({})",
+      LETTER_PHONEMES.map(|str| format!("({})", str)).join("|")
+    )
+    .as_str(),
+  )
+  .unwrap();
 }
 
-#[napi]
-impl EspeakAddon {
-    #[napi]
-    pub fn new(voice_name: String, options: u32, buffer_len: i32) -> Self {
-        EspeakAddon {
-            voice_name,
-            options,
-            buffer_len,
-            has_initialized: false
-        }
-    }
-    #[napi]
-    pub fn default() -> Self {
-        let mut espeak = EspeakAddon {
-            voice_name: "en-us".to_string(),
-            buffer_len: 1000,
-            options: espeakINITIALIZE_PHONEME_EVENTS,
-            has_initialized: false
-        };
-        espeak.initialize();
-        espeak
-    }
+pub fn text_to_phonemes(text: &str) -> String {
+  let mut speaker = espeakng::initialise(None).unwrap().lock();
 
-    #[napi]
-    pub fn initialize(&mut self) {
-        assert!(!self.has_initialized);
-        let output: espeak_AUDIO_OUTPUT = espeak_AUDIO_OUTPUT_AUDIO_OUTPUT_RETRIEVAL;
-        let path: *const c_char = std::ptr::null();
-        let voice_name_cstr =
-            CString::new(self.voice_name.clone()).expect("Failed to convert &str to CString");
-        let voice_name = voice_name_cstr.as_ptr();
-
-        // Returns: sample rate in Hz, or -1 (EE_INTERNAL_ERROR).
-        let _sample_rate =
-            unsafe { espeak_Initialize(output, self.buffer_len, path, self.options as i32) };
-
-        unsafe {
-            espeak_SetVoiceByName(voice_name as *const c_char);
-            espeak_SetSynthCallback(Some(synth_callback));
-        };
-
-        self.has_initialized = true;
-
-        let text_cstr = CString::new("test").expect("Failed to convert &str to CString");
-        let position = 0u32;
-        let position_type: espeak_POSITION_TYPE = 0;
-        let end_position = 0u32;
-        let flags = espeakCHARS_AUTO & espeak_PARAMETER_espeakSILENCE;
-        let identifier = std::ptr::null_mut();
-        let user_data = std::ptr::null_mut();
-
-        let mut phoneme_buffer: Vec<i8> = Vec::with_capacity(1000); // arbitrary capacity of 1000;
-        let cap = phoneme_buffer.capacity();
-        let memstream = unsafe {
-            espeakng_sys::open_memstream(&mut phoneme_buffer.as_mut_ptr(), &mut (cap as u64))
-        };
-
-        // By calling synth here, espeak creates a global translator that is required by TextToPhonemes later
-        unsafe {
-            espeak_SetPhonemeTrace(2, memstream);
-            espeak_Synth(
-                text_cstr.as_ptr() as *const c_void,
-                self.buffer_len as size_t,
-                position,
-                position_type,
-                end_position,
-                flags,
-                identifier,
-                user_data,
-            );
-        }
-    }
-
-    #[napi]
-    pub async fn text_to_phonemes(&self, text: String) -> String {
-        assert!(self.has_initialized);
-        let text_cstr = CString::new(text).expect("Failed to convert &str to CString");
-
-        let mut phoneme_buffer: Vec<i8> = Vec::with_capacity(1000); // arbitrary capacity of 1000;
-        let cap = phoneme_buffer.capacity();
-        let memstream = unsafe {
-            espeakng_sys::open_memstream(&mut phoneme_buffer.as_mut_ptr(), &mut (cap as u64))
-        };
-
-        unsafe {
-            espeak_SetPhonemeTrace(2, memstream);
-            let phonemes = espeak_TextToPhonemes(
-                &mut (text_cstr.as_ptr() as *const c_void),
-                espeakCHARS_AUTO as i32,
-                espeakPHONEMES_IPA as i32,
-            );
-            let result = CStr::from_ptr(phonemes).to_str().unwrap();
-            result.to_string()
-        }
-    }
+  text
+    .split_inclusive([',', '.', '?', '!'])
+    .map(|text| {
+      speaker
+        .text_to_phonemes(text, espeakng::PhonemeGenOptions::Standard)
+        .unwrap()
+        .unwrap()
+    })
+    .collect::<Vec<_>>()
+    .join(" ")
 }
 
-/// Callback returns: 0=continue synthesis,  1=abort synthesis.
-unsafe extern "C" fn synth_callback(
-    _wav: *mut c_short,
-    _sample_count: c_int,
-    _events: *mut espeak_EVENT,
-) -> c_int {
-    0
+#[napi(object)]
+#[derive(Clone)]
+pub struct NestedChunk {
+  pub value: String,
+  pub start: f64,
+  pub end: f64,
+  pub start_time: f64,
+  pub end_time: f64,
+  pub chunks: Vec<Chunk>,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use markov::Chain;
-    use std::process::Command;
-    use std::{
-        fs,
-        io::{self, BufRead, BufReader},
+#[napi(object)]
+#[derive(Clone)]
+pub struct Chunk {
+  pub value: String,
+  pub start: f64,
+  pub end: f64,
+  pub start_time: f64,
+  pub end_time: f64,
+}
+
+#[napi(object)]
+#[derive(Clone)]
+pub struct PhonemeChunk {
+  pub value: String,
+  pub value_word: String,
+  pub start: f64,
+  pub end: f64,
+  pub start_time: f64,
+  pub end_time: f64,
+}
+
+pub fn transform_raw_phoneme_timestamps(
+  phoneme_list: &Vec<&str>,
+  end_times: &Vec<f64>,
+) -> Vec<PhonemeChunk> {
+  let mut words: Vec<PhonemeChunk> = Vec::new();
+
+  let mut i = 0;
+  while i < phoneme_list.len() {
+    // Loop until we find a char that isnt a phonetic boundary
+    while i < phoneme_list.len() && is_phonetic_word_boundary(phoneme_list.get(i).unwrap()) {
+      i += 1;
+    }
+
+    // Gather chars until we reach another boundary or end of list
+    let start = i;
+    let mut value = String::new();
+    while i < phoneme_list.len() && !is_phonetic_word_boundary(phoneme_list.get(i).unwrap()) {
+      let phoneme = phoneme_list.get(i).unwrap();
+      if !PHONETIC_WORD_TAG_BOUNDARIES.contains(phoneme) {
+        value.push_str(phoneme);
+      }
+      i += 1;
+    }
+
+    // Split apart known combined phonemes
+    let values = if COMBINED_PHONEME_MAPPING.contains_key(value.as_str()) {
+      let values = COMBINED_PHONEME_MAPPING.get(value.as_str()).unwrap();
+      values.iter().map(|str| str.to_string()).collect()
+    } else {
+      Vec::from([value])
     };
 
-    use futures::executor::block_on;
-    #[test]
-    fn does_not_panic() {
-        let espeak = EspeakAddon::default();
-        let result = block_on(espeak.text_to_phonemes("of the".to_string()));
-        println!("{}", result);
-    }
+    // Create chunks for phonemes
+    let mut start = start;
+    for value in values {
+      if value.len() == 0 {
+        continue;
+      }
+      let end = start + value.len();
+      let length = value.len();
 
-    fn setup_markov() -> io::Result<Chain<String>> {
-        let entries = fs::read_dir("./testfiles")?
-            .map(|result| result.map(|item| item.path()))
-            .collect::<Result<Vec<_>, io::Error>>()?;
-        let mut chain: Chain<String> = Chain::new();
-        entries.iter().for_each(|item| {
-            let file = fs::File::open(item).unwrap();
-            let buf_reader = BufReader::new(file);
-            buf_reader.lines().for_each(|line| {
-                if let Ok(content) = line {
-                    chain.feed_str(&content);
-                }
-            })
-        });
+      let phoneme_word = phoneme_to_word(value.as_str()).trim().to_string();
 
-        Ok(chain)
-    }
+      words.push(PhonemeChunk {
+        value,
+        value_word: phoneme_word,
+        start: start as f64,
+        end: end as f64,
+        start_time: (end_times[usize::max(1, start) - 1] as f64) * 1000.0,
+        end_time: (end_times[usize::max(1, end) - 1] as f64) * 1000.0,
+      });
 
-    fn call_espeak_cli(text: &str) -> String {
-        let result = Command::new("sh")
-            .arg("-c")
-            .arg(format!("espeak-ng \"{}\" -q -x --ipa -v en-us", text))
-            .output()
-            .expect("cli execution failed")
-            .stdout;
-        let output = String::from_utf8_lossy(&result).into_owned();
-        output
+      start += length;
     }
-    #[test]
-    fn markov_test_once() {
-        let chain = setup_markov().expect("Failed to create markov chain");
-        let espeak = EspeakAddon::default();
-        let random_input = chain.generate_str();
-        let result = block_on(espeak.text_to_phonemes(random_input.clone()));
-        let result_from_cli = call_espeak_cli(&random_input);
-        println!(
-            "Input: {} \nPhonemes: {}CLI: {}",
-            &random_input, &result, &result_from_cli
-        );
-        assert!(result.eq(&result_from_cli) || result_from_cli.is_empty())
-    }
+  }
 
-    #[test]
-    fn markov_test_lot() {
-        const n: u32 = 10;
-        (1..n).for_each(|_| markov_test_once());
-    }
+  return words;
+}
+
+fn is_phonetic_punctuation(phoneme: &str) -> bool {
+  return PHONETIC_PUNCTUATION.contains(&phoneme);
+}
+
+fn is_phonetic_word_boundary(phoneme: &str) -> bool {
+  return PHONETIC_WORD_BOUNDARY.contains(&phoneme);
+}
+
+pub fn phoneme_to_word(phoneme: &str) -> String {
+  if ACRONYM_REGEX.is_match(phoneme) {
+    let value: String = ACRONYM_REGEX
+      .split(phoneme)
+      .filter(|str| str.len() > 0)
+      .map(|phoneme| {
+        (LETTER_PHONEMES
+          .iter()
+          .position(|letter| (*letter).eq(phoneme))
+          .unwrap()
+          + 97) as u8 as char
+      })
+      .collect();
+    return value;
+  }
+
+  if PHONEME_WORD_TO_WORD_MAPPING.contains_key(phoneme) {
+    return PHONEME_WORD_TO_WORD_MAPPING
+      .get(phoneme)
+      .unwrap()
+      .to_string();
+  }
+
+  let mut word = String::new();
+  for phoneme_char in phoneme.chars() {
+    word.push_str(
+      PHONEME_TO_CHAR_MAPPING
+        .get(phoneme_char.to_string().as_str())
+        .unwrap_or(&""),
+    );
+  }
+  return word;
 }
