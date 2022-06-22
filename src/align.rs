@@ -78,7 +78,7 @@ pub async fn align_phonemes_graphemes(
     start_time: 0.0,
     end_time: 0.0,
     start: 0.0,
-    end: text.len() as f64,
+    end: text.chars().count() as f64,
     chunks: Vec::new(),
   };
 
@@ -87,15 +87,9 @@ pub async fn align_phonemes_graphemes(
   let mut phoneme_index = 0;
   let mut words: Vec<Chunk> = split_text_to_word_chunks(text);
 
-
   for word_index in 0..words.len() {
     let word = words.get_mut(word_index).unwrap();
     if phoneme_index >= phonemes.len() {
-      println!(
-        "\nRan out of phonemes: {}\nPhonemes: {}",
-        word.value,
-        phonemes_list.join("")
-      );
       break;
     }
     let phoneme = phonemes.get(phoneme_index).unwrap();
@@ -124,7 +118,6 @@ pub async fn align_phonemes_graphemes(
       "forward",
     ) > 0.6;
 
-    println!("{}, {}, {}", is_desync_detected, is_complex(word.value.as_str()), word.value);
     // Handle numbers. 2021 -> two thousand twenty one and anything else
     // that isComplex deems as too complicated for regular handling
     if is_complex(word.value.as_str()) {
@@ -150,7 +143,6 @@ pub async fn align_phonemes_graphemes(
     }
     // Detect and resolve desync
     else if is_desync_detected {
-      println!("DESYNC");
       // More accurately detect desyncing
       let offset =
         get_closest_correct_word_offset(&words, &phonemes, word_index, phoneme_index, 3, 8);
@@ -236,7 +228,8 @@ fn split_text_to_word_chunks(text: &str) -> Vec<Chunk> {
 lazy_static! {
   pub static ref REGEX_COMPLEX_ACRONYM: Regex = Regex::new("(.*[A-Z].*){2,}").unwrap();
   pub static ref REGEX_COMPLEX_NUMBERS: Regex = Regex::new("[\\p{N}]").unwrap();
-  pub static ref REGEX_COMPLEX_SPECIAL_CHARS: Regex = Regex::new("[/\\\\\\(\\)\\{\\}\\[\\]+@=]").unwrap();
+  pub static ref REGEX_COMPLEX_SPECIAL_CHARS: Regex =
+    Regex::new("[/\\\\\\(\\)\\{\\}\\[\\]+@=]").unwrap();
   pub static ref REGEX_WORD: Regex = Regex::new(
     "[\\p{L}\\p{N}$¢£¤¥֏؋߾߿৲৳৻૱௹฿៛₠₡₢₣₤₥₦₧₨₩₪₫€₭₮₯₰₱₲₳₴₵₶₷₸₹₺₻₼₽₾₿꠸﷼﹩＄￠￡￥￦𑿝𑿞𑿟𑿠𞋿𞲰]"
   )
@@ -251,7 +244,7 @@ fn is_complex(string: &str) -> bool {
 
 // Originally used \p{Sc} but rust doesnt have support so pulled it from
 // https://www.compart.com/en/unicode/category/Sc
-pub fn is_word(word: &str) -> bool {
+fn is_word(word: &str) -> bool {
   REGEX_WORD.is_match(word)
 }
 

@@ -3,7 +3,6 @@ mod leven;
 pub mod phonetics;
 
 extern crate napi;
-use align::is_word;
 use napi_derive::napi;
 
 use std::collections::HashMap;
@@ -243,18 +242,18 @@ pub fn transform_raw_phoneme_timestamps(
       if value.len() == 0 {
         continue;
       }
-      let end = start + value.len();
-      let length = value.len();
+      let length = value.chars().count();
+      let end = start + length;
 
       let phoneme_word = phoneme_to_word(value.as_str()).trim().to_string();
 
       words.push(PhonemeChunk {
         value,
         value_word: phoneme_word,
-        start: start as f64,
-        end: end as f64,
+        start: usize::min(start, phoneme_list.len()) as f64,
+        end: usize::min(end, phoneme_list.len()) as f64,
         start_time: (end_times[usize::max(1, start) - 1] as f64) * 1000.0,
-        end_time: (end_times[usize::max(1, end) - 1] as f64) * 1000.0,
+        end_time: (end_times[usize::min(usize::max(1, end), end_times.len()) - 1] as f64) * 1000.0,
       });
 
       start += length;
