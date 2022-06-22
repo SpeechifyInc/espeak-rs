@@ -1,6 +1,6 @@
 {
   "name": "@speechifyinc/espeak-rs",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
@@ -21,10 +21,10 @@
     "node": ">= 16"
   },
   "scripts": {
-    "prepare": "git apply espeakng-rs.patch --directory=espeakng-rs",
+    "prepare": "git apply espeakng-rs.patch --directory=espeakng-rs || true",
     "artifacts": "napi artifacts",
-    "build": "npm run prepare || napi build --platform --release",
-    "build:debug": "npm run prepare || napi build --platform",
+    "build": "npm run prepare && napi build --platform --release",
+    "build:debug": "npm run prepare && napi build --platform",
     "prepublishOnly": "napi prepublish -t npm",
     "test": "ava",
     "version": "napi version"
