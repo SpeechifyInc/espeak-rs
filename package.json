@@ -21,10 +21,10 @@
     "node": ">= 16"
   },
   "scripts": {
-    "prepare": "git submodule update --init --recursive && git apply espeakng-rs.patch --directory=espeakng-rs",
+    "prepare": "git apply espeakng-rs.patch --directory=espeakng-rs",
     "artifacts": "napi artifacts",
-    "build": "napi build --platform --release",
-    "build:debug": "napi build --platform",
+    "build": "npm run prepare || napi build --platform --release",
+    "build:debug": "npm run prepare || napi build --platform",
     "prepublishOnly": "napi prepublish -t npm",
     "test": "ava",
     "version": "napi version"
