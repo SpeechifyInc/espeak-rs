@@ -158,7 +158,7 @@ lazy_static! {
 }
 
 pub fn text_to_phonemes(text: &str) -> String {
-  let mut speaker = espeakng::initialise(None).unwrap().lock();
+  let mut speaker = espeakng::initialise(Some("en-us")).unwrap().lock();
 
   text
     .split_inclusive([',', '.', '?', '!'])
