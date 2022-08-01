@@ -132,8 +132,6 @@ lazy_static! {
     "waɪ",
     "zi",
   ];
-  pub static ref PHONETIC_PUNCTUATION: [&'static str; 9] =
-    ["^", ".", "~", ":", ";", ",", "?", "!", " "];
   pub static ref PHONETIC_WORD_TAG_BOUNDARIES: [&'static str; 4] = ["<w>", "<s>", "</w>", "</s>"];
   pub static ref PHONETIC_WORD_BOUNDARY: [&'static str; 22] = [
     "!", "(", ")", "-", ";", ":", ",", ".", "?", "¡", "¿", "—", "…", "'", "«", "»", "“", "”", " ",
@@ -261,10 +259,6 @@ pub fn transform_raw_phoneme_timestamps(
   }
 
   return words;
-}
-
-fn is_phonetic_punctuation(phoneme: &str) -> bool {
-  return PHONETIC_PUNCTUATION.contains(&phoneme);
 }
 
 fn is_phonetic_word_boundary(phoneme: &str) -> bool {
