@@ -10,7 +10,7 @@ use crate::{
 pub async fn force_align_phonemes_graphemes(
   text: String,
   phonemes: String,
-  use_phoneme_bounds: bool,
+  align_phonemes: bool,
 ) -> NestedChunk {
   let mut chunk = align_phonemes_graphemes(
     text.as_str(),
@@ -22,7 +22,7 @@ pub async fn force_align_phonemes_graphemes(
       .iter()
       .map(|string| string.as_str())
       .collect(),
-    use_phoneme_bounds,
+      align_phonemes,
   )
   .await;
   chunk.start_time = chunk
@@ -43,13 +43,13 @@ pub async fn force_align_phonemes_graphemes_list(
   text: String,
   end_times: Vec<f64>,
   phonemes_list: Vec<String>,
-  use_phoneme_bounds: bool,
+  align_phonemes: bool,
 ) -> NestedChunk {
   let mut chunk = align_phonemes_graphemes(
     text.as_str(),
     end_times,
     phonemes_list.iter().map(|string| string.as_str()).collect(),
-    use_phoneme_bounds,
+    align_phonemes,
   )
   .await;
   chunk.start_time = chunk
@@ -69,16 +69,24 @@ pub async fn align_phonemes_graphemes(
   text: &str,
   end_times: Vec<f64>,
   phonemes_list: Vec<&str>,
-  use_phoneme_bounds: bool,
+  align_phonemes: bool,
 ) -> NestedChunk {
   let phonemes = transform_raw_phoneme_timestamps(&phonemes_list, &end_times);
 
   let chunk: NestedChunk = NestedChunk {
-    value: text.to_string(),
+    value: if align_phonemes {
+      phonemes_list.join("")
+    } else {
+      text.to_string()
+    },
     start_time: 0.0,
     end_time: 0.0,
     start: 0.0,
-    end: text.chars().count() as f64,
+    end: if align_phonemes {
+      phonemes_list.len() as f64
+    } else {
+      text.chars().count() as f64
+    },
     chunks: Vec::new(),
   };
 
@@ -104,7 +112,7 @@ pub async fn align_phonemes_graphemes(
       .unwrap_or(phonemes[phoneme_index].start_time);
     word.end_time = phonemes[phoneme_index].end_time;
 
-    if use_phoneme_bounds {
+    if align_phonemes {
       word.start = phoneme.start;
       word.end = phoneme.end;
     }
@@ -137,7 +145,7 @@ pub async fn align_phonemes_graphemes(
         .get(phoneme_index)
         .map(|chunk| chunk.clone().end_time)
         .unwrap_or(phonemes[phonemes.len() - 1].end_time);
-      if use_phoneme_bounds {
+      if align_phonemes {
         word.end = phonemes[usize::min(phoneme_index, phonemes.len() - 1)].end
       };
     }
@@ -164,6 +172,10 @@ pub async fn align_phonemes_graphemes(
       }
     }
 
+    if align_phonemes {
+      word.value = phonemes_list[(word.start as usize)..(word.end as usize)].join("");
+    }
+
     phoneme_index += 1;
 
     chunks.push(word);
@@ -182,7 +194,7 @@ pub async fn align_phonemes_graphemes(
 fn split_text_to_word_chunks(text: &str) -> Vec<Chunk> {
   // TODO: Replace with reduce or map with accumulator
   let mut character_counter = 0;
-  let ignored_chars = [',', '.', '?', '!', ':', '[', ']', '{', '}', '"', ' '];
+  let ignored_chars = [',', '.', '?', '!', ':', '[', ']', '{', '}', '"', ' ', '\n'];
 
   return text
     .split_inclusive(ignored_chars)
