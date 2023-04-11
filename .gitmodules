@@ -1,3 +1,7 @@
 [submodule "espeakng-rs"]
 	path = espeakng-rs
 	url = https://github.com/GnomedDev/espeakNG-rs
+
+[submodule "espeakng-sys"]
+	path = espeakng-rs/espeakng-sys
+	url = https://github.com/Better-Player/espeakng-sys
