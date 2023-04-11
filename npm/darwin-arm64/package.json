@@ -1,11 +1,11 @@
 {
-  "name": "@speechifyinc/espeak-rs-linux-x64-gnu",
+  "name": "@speechifyinc/espeak-rs-darwin-arm64",
   "version": "0.1.4",
   "os": [
-    "linux"
+    "darwin"
   ],
   "cpu": [
-    "x64"
+    "arm64"
   ],
   "main": "espeak-rs.darwin-arm64.node",
   "files": [
