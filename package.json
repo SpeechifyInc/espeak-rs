@@ -8,7 +8,8 @@
     "triples": {
       "defaults": false,
       "additional": [
-        "x86_64-unknown-linux-gnu"
+        "x86_64-unknown-linux-gnu",
+        "darwin-arm64"
       ]
     }
   },
@@ -37,6 +38,7 @@
     "url": "https://github.com/SpeechifyInc/espeak-rs"
   },
   "optionalDependencies": {
-    "@speechifyinc/espeak-rs-linux-x64-gnu": "0.0.1"
+    "@speechifyinc/espeak-rs-linux-x64-gnu": "0.0.1",
+    "@speechifyinc/espeak-rs-darwin-arm64": "0.0.1"
   }
 }

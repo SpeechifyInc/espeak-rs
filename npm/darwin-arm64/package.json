@@ -1,0 +1,28 @@
+{
+  "name": "@speechifyinc/espeak-rs-linux-x64-gnu",
+  "version": "0.1.4",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "main": "espeak-rs.darwin-arm64.node",
+  "files": [
+    "espeak-rs.darwin-arm64.node"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">= 16"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "libc": [
+    "glibc"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SpeechifyInc/espeak-rs"
+  }
+}

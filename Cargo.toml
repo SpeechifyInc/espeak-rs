@@ -10,12 +10,13 @@ path = "src/lib.rs"
 
 [dependencies]
 # https://nodejs.org/api/n-api.html#node-api-version-matrix
-napi = { version = "2.2.0", default-features = false, features = ["napi8", "async", "tokio_rt"] }
-napi-derive = "2.2.0"
+napi = { version = "2.12.1", default-features = false, features = ["napi8", "async", "tokio_rt"] }
+napi-derive = "2.12.2"
 lazy_static = "1.4.0"
 espeakng = { path="espeakng-rs" }
 regex = "1"
 levenshtein = "1.0.5"
+bindgen = "0.64.0"
 
 [build-dependencies]
 napi-build = "1.2.1"
