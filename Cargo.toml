@@ -13,22 +13,22 @@ path = "src/lib.rs"
 napi = { version = "2.2.0", default-features = false, features = ["napi8", "async", "tokio_rt"] }
 napi-derive = "2.2.0"
 lazy_static = "1.4.0"
-espeakng = { path="espeakng-rs" }
+espeakng = { git = "https://github.com/SpeechifyInc/espeakNG-rs", branch = "fix-compile-macos", features = ["static"] }
 regex = "1"
 levenshtein = "1.0.5"
 
 [build-dependencies]
-napi-build = "1.2.1"
+napi-build = "2.0.1"
 
 [dev-dependencies]
 markov = "1.1.0"
 pretty_assertions = "1.2.1"
-criterion = { version = "0.3.0", features=["async_tokio", "html_reports"] }
-tokio = { version = "1", features = ["rt", "macros"]}
+criterion = { version = "0.4.0", features = ["async_tokio", "html_reports"] }
+tokio = { version = "1", features = ["rt", "macros"] }
 
 [profile.release]
 lto = true
-
+codegen-units = 1
 
 [[bench]]
 name = "phonetics"
