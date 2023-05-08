@@ -1,7 +1,7 @@
 use crate::phonetics::punctuation::{extract_punctuation, restore_punctuations};
 use crate::text_to_phonemes;
-use regex::Regex;
 use napi_derive::napi;
+use regex::Regex;
 
 const PHONEME_SET: [&str; 126] = [
   " ", "!", "'", "(", ")", ",", "-", ".", ":", ";", "?", "a", "b", "c", "d", "e", "f", "h", "i",
@@ -19,14 +19,13 @@ fn remove_additional_separators(string: &str) -> String {
     .unwrap()
     .replace_all(string, "_")
     .replace("_ ", " ")
-    .to_owned()
 }
 
 fn remove_line_breaks(string: &str) -> String {
-  string.replace("\n", " ").to_owned()
+  string.replace('\n', " ")
 }
 fn remove_extra_spaces(string: &str) -> String {
-  string.replace("  ", " ").to_owned()
+  string.replace("  ", " ")
 }
 fn remove_non_phonetic_chars(string: &str) -> String {
   string
@@ -69,7 +68,6 @@ pub fn to_phonetics(text: &str) -> String {
   sanitize_espeak_output(&text_to_phonemes(text))
 }
 
-
 pub async fn string_to_phonetics(text: &str, preserve_punctuation: bool) -> String {
   if preserve_punctuation {
     let res = Regex::new("([0-9]),([0-9])")
@@ -84,13 +82,12 @@ pub async fn string_to_phonetics(text: &str, preserve_punctuation: bool) -> Stri
     return remove_line_breaks(&collapse_whitespace(&preserve_boundary_whitespace(
       text,
       &combined_phonemized_text,
-    )))
-    .to_owned();
+    )));
   }
-  return to_phonetics(text);
+  to_phonetics(text)
 }
 
 #[napi]
 pub async fn phonemize(text: String, preserve_punctuation: bool) -> String {
-    string_to_phonetics(text.as_str(), preserve_punctuation).await
+  string_to_phonetics(text.as_str(), preserve_punctuation).await
 }

@@ -78,24 +78,24 @@ fn markov_test_a_lot_threaded() -> Result<(), espeakng::Error> {
     })
     .collect::<Vec<_>>();
 
-//   let join_handles = (1..N)
-//     .map(|_| {
-//       let espeak_handle = std::thread::spawn(move || {
-//         let mut speaker = espeakng::initialise(None).unwrap().lock();
-//         let phonemes = speaker
-//           .text_to_phonemes("Hello", espeakng::PhonemeGenOptions::Standard)
-//           .unwrap()
-//           .unwrap();
-//         println!("{}", phonemes);
-//         phonemes
-//       });
-//       espeak_handle
-//     })
-//     .collect::<Vec<_>>();
+  //   let join_handles = (1..N)
+  //     .map(|_| {
+  //       let espeak_handle = std::thread::spawn(move || {
+  //         let mut speaker = espeakng::initialise(None).unwrap().lock();
+  //         let phonemes = speaker
+  //           .text_to_phonemes("Hello", espeakng::PhonemeGenOptions::Standard)
+  //           .unwrap()
+  //           .unwrap();
+  //         println!("{}", phonemes);
+  //         phonemes
+  //       });
+  //       espeak_handle
+  //     })
+  //     .collect::<Vec<_>>();
 
-//   for handle in join_handles {
-//     handle.join().unwrap();
-//   }
+  //   for handle in join_handles {
+  //     handle.join().unwrap();
+  //   }
 
   Result::Ok(())
 

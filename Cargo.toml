@@ -12,10 +12,10 @@ path = "src/lib.rs"
 # https://nodejs.org/api/n-api.html#node-api-version-matrix
 napi = { version = "2.2.0", default-features = false, features = ["napi8", "async", "tokio_rt"] }
 napi-derive = "2.2.0"
-lazy_static = "1.4.0"
 espeakng = { git = "https://github.com/SpeechifyInc/espeakNG-rs", branch = "fix-compile-macos", features = ["static"] }
 regex = "1"
 levenshtein = "1.0.5"
+once_cell = "1.17.1"
 
 [build-dependencies]
 napi-build = "2.0.1"

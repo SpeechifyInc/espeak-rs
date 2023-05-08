@@ -1,4 +1,5 @@
 use napi_derive::napi;
+use once_cell::sync::Lazy;
 use regex::Regex;
 
 use crate::{
@@ -22,7 +23,7 @@ pub async fn force_align_phonemes_graphemes(
       .iter()
       .map(|string| string.as_str())
       .collect(),
-      align_phonemes,
+    align_phonemes,
   )
   .await;
   chunk.start_time = chunk
@@ -107,7 +108,7 @@ pub async fn align_phonemes_graphemes(
     // Fill word with data
     word.start_time = chunk
       .chunks
-      .get(chunk.chunks.len() - 1)
+      .last()
       .map(|chunk| chunk.end_time)
       .unwrap_or(phonemes[phoneme_index].start_time);
     word.end_time = phonemes[phoneme_index].end_time;
@@ -134,10 +135,9 @@ pub async fn align_phonemes_graphemes(
       let word_phoneme_word_count = usize::max(
         1,
         word_phonemes
-          .split(" ")
-          .filter(|string| string.len() > 0)
-          .collect::<Vec<_>>()
-          .len(),
+          .split(' ')
+          .filter(|string| !string.is_empty())
+          .count(),
       );
 
       phoneme_index += word_phoneme_word_count - 1;
@@ -181,14 +181,14 @@ pub async fn align_phonemes_graphemes(
     chunks.push(word);
   }
 
-  return NestedChunk {
+  NestedChunk {
     value: chunk.value,
     start: chunk.start,
     end: chunk.end,
     start_time: chunk.start_time,
     end_time: chunk.end_time,
     chunks,
-  };
+  }
 }
 
 fn split_text_to_word_chunks(text: &str) -> Vec<Chunk> {
@@ -198,7 +198,7 @@ fn split_text_to_word_chunks(text: &str) -> Vec<Chunk> {
 
   return text
     .split_inclusive(ignored_chars)
-    .map(|word| -> Option<Chunk> {
+    .filter_map(|word| -> Option<Chunk> {
       // We use .chars().count() to get the number of characters rather than
       // the number of bytes
       let full_word_len = word.chars().count();
@@ -220,33 +220,30 @@ fn split_text_to_word_chunks(text: &str) -> Vec<Chunk> {
 
       // If it's not a word, continue
       if !is_word(trimmed_word.as_str()) {
-        return Option::None;
+        return None;
       }
 
       // Otherwise, add the word to our list
-      return Option::Some(Chunk {
+      Some(Chunk {
         value: trimmed_word,
         start: start as f64,
         start_time: 0.0,
         end: end as f64,
         end_time: 0.0,
-      });
+      })
     })
-    .filter(|val| val.is_some())
-    .map(|val| val.unwrap())
     .collect();
 }
 
-lazy_static! {
-  pub static ref REGEX_COMPLEX_ACRONYM: Regex = Regex::new("(.*[A-Z].*){2,}").unwrap();
-  pub static ref REGEX_COMPLEX_NUMBERS: Regex = Regex::new("[\\p{N}]").unwrap();
-  pub static ref REGEX_COMPLEX_SPECIAL_CHARS: Regex =
-    Regex::new("[/\\\\\\(\\)\\{\\}\\[\\]+@=]").unwrap();
-  pub static ref REGEX_WORD: Regex = Regex::new(
-    "[\\p{L}\\p{N}$¢£¤¥֏؋߾߿৲৳৻૱௹฿៛₠₡₢₣₤₥₦₧₨₩₪₫€₭₮₯₰₱₲₳₴₵₶₷₸₹₺₻₼₽₾₿꠸﷼﹩＄￠￡￥￦𑿝𑿞𑿟𑿠𞋿𞲰]"
-  )
-  .unwrap();
-}
+pub static REGEX_COMPLEX_ACRONYM: Lazy<Regex> =
+  Lazy::new(|| Regex::new("(.*[A-Z].*){2,}").unwrap());
+pub static REGEX_COMPLEX_NUMBERS: Lazy<Regex> = Lazy::new(|| Regex::new("[\\p{N}]").unwrap());
+pub static REGEX_COMPLEX_SPECIAL_CHARS: Lazy<Regex> =
+  Lazy::new(|| Regex::new("[/\\\\(){}\\[\\]+@=]").unwrap());
+pub static REGEX_WORD: Lazy<Regex> = Lazy::new(|| {
+  Regex::new("[\\p{L}\\p{N}$¢£¤¥֏؋߾߿৲৳৻૱௹฿៛₠₡₢₣₤₥₦₧₨₩₪₫€₭₮₯₰₱₲₳₴₵₶₷₸₹₺₻₼₽₾₿꠸﷼﹩＄￠￡￥￦𑿝𑿞𑿟𑿠𞋿𞲰]")
+    .unwrap()
+});
 
 fn is_complex(string: &str) -> bool {
   REGEX_COMPLEX_ACRONYM.is_match(string)
@@ -281,7 +278,7 @@ fn get_closest_correct_word_offset(
   // Given wordIndex = 3, maxOffset = 4, words.length = 10, generates [-3, -2, -1, 0, 1, 2, 3, 4]
   let word_index_offsets = (0..(max_offset * 2 + 1))
     .enumerate()
-    .map(|(i, _)| (max_offset as isize) - (i as isize))
+    .map(|(i, _)| max_offset - (i as isize))
     .filter(|i| {
       i + word_index >= 0
         && i + word_index + max_distance < (words.len() as isize)
@@ -289,7 +286,7 @@ fn get_closest_correct_word_offset(
     })
     .collect::<Vec<_>>(); // Prevents offsets that go out of bounds
 
-  if word_index_offsets.len() == 0 {
+  if word_index_offsets.is_empty() {
     return 0;
   }
   let average_leven_values = word_index_offsets
