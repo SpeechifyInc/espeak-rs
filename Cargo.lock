@@ -332,7 +332,7 @@ dependencies = [
 [[package]]
 name = "espeakng"
 version = "0.1.1"
-source = "git+https://github.com/SpeechifyInc/espeakNG-rs?branch=fix-compile-macos#15c5be6760a8dc169e7a44d62c18ca3b1abe8482"
+source = "git+https://github.com/SpeechifyInc/espeakNG-rs#15c5be6760a8dc169e7a44d62c18ca3b1abe8482"
 dependencies = [
  "cfg-if",
  "errno 0.2.8",
