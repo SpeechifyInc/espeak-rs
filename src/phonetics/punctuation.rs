@@ -3,7 +3,7 @@ use regex::Regex;
 pub fn extract_punctuation(text: &str) -> (Vec<String>, Vec<String>) {
   let split_text_regex = Regex::new("([!(),-.:;?]+)").unwrap();
   //   let (texts, punctuations) =
-  let splits = split_text_regex.split(&text).collect::<Vec<&str>>();
+  let splits = split_text_regex.split(text).collect::<Vec<&str>>();
   let captures = split_text_regex
     .find_iter(text)
     .map(|m| m.as_str())

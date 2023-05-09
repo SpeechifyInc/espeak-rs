@@ -1,2 +1,2 @@
+pub mod internal;
 pub mod punctuation;
-pub mod phonetics;

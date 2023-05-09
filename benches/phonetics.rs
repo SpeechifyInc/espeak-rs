@@ -9,11 +9,7 @@ fn criterion_benchmark(c: &mut Criterion) {
   c.bench_with_input(
     BenchmarkId::new("espeak_threaded", input_text),
     &input_text,
-    |b, &s| {
-        b.iter(|| { 
-            extract_punctuation(s)
-        })
-    },
+    |b, &s| b.iter(|| extract_punctuation(s)),
   );
 }
 

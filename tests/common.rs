@@ -1,7 +1,8 @@
 use markov::Chain;
 use std::{
   fs,
-  io::{self, BufRead, BufReader}, process::Command,
+  io::{self, BufRead, BufReader},
+  process::Command,
 };
 
 pub fn setup_markov() -> io::Result<Chain<String>> {
@@ -21,7 +22,6 @@ pub fn setup_markov() -> io::Result<Chain<String>> {
 
   Ok(chain)
 }
-
 
 pub fn call_espeak_cli(text: &str) -> String {
   let result = Command::new("sh")

@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use once_cell::sync::Lazy;
+
 use crate::{phoneme_to_word, Chunk, PhonemeChunk};
 
 #[must_use]
@@ -66,8 +68,8 @@ pub fn leven_phoneme(a: &str, b: &str) -> usize {
   result
 }
 
-lazy_static! {
-  pub static ref SIMILAR_CHARS: HashMap<char, Vec<char>> = HashMap::from([
+pub static SIMILAR_CHARS: Lazy<HashMap<char, Vec<char>>> = Lazy::new(|| {
+  HashMap::from([
     ('j', Vec::from(['y'])),
     ('k', Vec::from(['c', 'q', 'x'])),
     ('c', Vec::from(['k', 's'])),
@@ -78,8 +80,8 @@ lazy_static! {
     ('z', Vec::from(['s'])),
     ('a', Vec::from(['o'])),
     ('d', Vec::from(['g'])),
-  ]);
-}
+  ])
+});
 
 fn fuzzy_compare_chars(a: char, b: char) -> bool {
   a == b || SIMILAR_CHARS.get(&b).unwrap_or(&Vec::new()).contains(&a)
@@ -96,8 +98,8 @@ pub fn leven_phoneme_relative(word: &Chunk, phoneme: &str) -> f32 {
 }
 
 pub fn get_average_leven(
-  words: &Vec<Chunk>,
-  phonemes: &Vec<PhonemeChunk>,
+  words: &[Chunk],
+  phonemes: &[PhonemeChunk],
   word_index: usize,
   phoneme_index: usize,
   distance: usize,
@@ -108,12 +110,14 @@ pub fn get_average_leven(
   let mut leven_sum: f32 = 0.0;
   for i in 0..(distance as isize) {
     leven_sum += leven_phoneme_relative(
-      &words[((word_index as isize) + (i as isize) * direction_multi) as usize],
-      phonemes[((phoneme_index as isize) + (i as isize) * direction_multi) as usize]
+      &words[((word_index as isize) + i * direction_multi) as usize],
+      phonemes[((phoneme_index as isize) + i * direction_multi) as usize]
         .value
         .as_str(),
     );
   }
 
-  return (leven_sum as f32) / (distance as f32);
+  let distance = distance as f32;
+
+  leven_sum / distance
 }

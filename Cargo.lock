@@ -318,12 +318,12 @@ version = "0.0.0"
 dependencies = [
  "criterion",
  "espeakng",
- "lazy_static",
  "levenshtein",
  "markov",
  "napi",
  "napi-build",
  "napi-derive",
+ "once_cell",
  "pretty_assertions",
  "regex",
  "tokio",
