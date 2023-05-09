@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:20.04
 
 RUN apt-get update && apt-get -y install gcc libclang-dev npm autotools-dev automake curl fd-find build-essential libc6-dev libstdc++-11-dev wget
 
