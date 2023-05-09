@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  espeak-rs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: >
+      /bin/sh -c "cargo nextest run && npm run build"
+
