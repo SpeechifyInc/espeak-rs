@@ -1,6 +1,5 @@
 use crate::phonetics::punctuation::{extract_punctuation, restore_punctuations};
 use crate::text_to_phonemes;
-use napi_derive::napi;
 use regex::Regex;
 
 const PHONEME_SET: [&str; 126] = [
@@ -68,7 +67,7 @@ pub fn to_phonetics(text: &str) -> String {
   sanitize_espeak_output(&text_to_phonemes(text))
 }
 
-pub async fn string_to_phonetics(text: &str, preserve_punctuation: bool) -> String {
+pub fn string_to_phonetics(text: &str, preserve_punctuation: bool) -> String {
   if preserve_punctuation {
     let res = Regex::new("([0-9]),([0-9])")
       .unwrap()
@@ -87,7 +86,6 @@ pub async fn string_to_phonetics(text: &str, preserve_punctuation: bool) -> Stri
   to_phonetics(text)
 }
 
-#[napi]
-pub async fn phonemize(text: String, preserve_punctuation: bool) -> String {
-  string_to_phonetics(text.as_str(), preserve_punctuation).await
+pub fn phonemize(text: String, preserve_punctuation: bool) -> String {
+  string_to_phonetics(text.as_str(), preserve_punctuation)
 }

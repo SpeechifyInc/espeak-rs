@@ -1,4 +1,3 @@
-use napi_derive::napi;
 use once_cell::sync::Lazy;
 use regex::Regex;
 
@@ -7,8 +6,7 @@ use crate::{
   PhonemeChunk,
 };
 
-#[napi]
-pub async fn force_align_phonemes_graphemes(
+pub fn force_align_phonemes_graphemes(
   text: String,
   phonemes: String,
   align_phonemes: bool,
@@ -24,8 +22,7 @@ pub async fn force_align_phonemes_graphemes(
       .map(|string| string.as_str())
       .collect(),
     align_phonemes,
-  )
-  .await;
+  );
   chunk.start_time = chunk
     .chunks
     .get(0)
@@ -39,8 +36,7 @@ pub async fn force_align_phonemes_graphemes(
   chunk
 }
 
-#[napi]
-pub async fn force_align_phonemes_graphemes_list(
+pub fn force_align_phonemes_graphemes_list(
   text: String,
   end_times: Vec<f64>,
   phonemes_list: Vec<String>,
@@ -51,8 +47,7 @@ pub async fn force_align_phonemes_graphemes_list(
     end_times,
     phonemes_list.iter().map(|string| string.as_str()).collect(),
     align_phonemes,
-  )
-  .await;
+  );
   chunk.start_time = chunk
     .chunks
     .get(0)
@@ -66,7 +61,7 @@ pub async fn force_align_phonemes_graphemes_list(
   chunk
 }
 
-pub async fn align_phonemes_graphemes(
+pub fn align_phonemes_graphemes(
   text: &str,
   end_times: Vec<f64>,
   phonemes_list: Vec<&str>,

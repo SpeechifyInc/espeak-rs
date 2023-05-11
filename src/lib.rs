@@ -1,12 +1,13 @@
-extern crate napi;
-
 use std::collections::HashMap;
 
 use napi_derive::napi;
 use once_cell::sync::Lazy;
+use pyo3::prelude::PyModule;
+use pyo3::{pyclass, pymodule, wrap_pyfunction, PyResult, Python};
 use regex::Regex;
 
 pub mod align;
+mod frontend;
 mod leven;
 pub mod phonetics;
 
@@ -190,7 +191,8 @@ pub fn text_to_phonemes(text: &str) -> String {
     .join(" ")
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "napi", napi(object))]
+#[pyclass]
 #[derive(Clone)]
 pub struct NestedChunk {
   pub value: String,
@@ -201,7 +203,8 @@ pub struct NestedChunk {
   pub chunks: Vec<Chunk>,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "napi", napi(object))]
+#[pyclass]
 #[derive(Clone)]
 pub struct Chunk {
   pub value: String,
@@ -211,7 +214,8 @@ pub struct Chunk {
   pub end_time: f64,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "napi", napi(object))]
+#[pyclass]
 #[derive(Clone)]
 pub struct PhonemeChunk {
   pub value: String,
@@ -223,8 +227,8 @@ pub struct PhonemeChunk {
 }
 
 pub fn transform_raw_phoneme_timestamps(
-  phoneme_list: &Vec<&str>,
-  end_times: &Vec<f64>,
+  phoneme_list: &[&str],
+  end_times: &[f64],
 ) -> Vec<PhonemeChunk> {
   let mut words: Vec<PhonemeChunk> = Vec::new();
 
@@ -317,4 +321,21 @@ pub fn phoneme_to_word(phoneme: &str) -> String {
     );
   }
   word
+}
+
+/// A Python module implemented in Rust.
+#[pymodule]
+fn espeak_rs(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+  use frontend::py;
+  m.add_function(wrap_pyfunction!(py::phonemize, m)?)?;
+  m.add_function(wrap_pyfunction!(
+    py::force_align_phonemes_graphemes_list,
+    m
+  )?)?;
+  m.add_function(wrap_pyfunction!(py::force_align_phonemes_graphemes, m)?)?;
+
+  m.add_class::<NestedChunk>()?;
+  m.add_class::<Chunk>()?;
+  m.add_class::<PhonemeChunk>()?;
+  Ok(())
 }
