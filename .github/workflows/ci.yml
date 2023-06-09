@@ -33,6 +33,12 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache
       - name: Run docker images
         run: docker compose up
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: bindings-x86_64-unknown-linux-gnu
+          path: ${{ env.APP_NAME }}.*.node
+          if-no-files-found: error
   test-linux-x64-gnu-binding:
     name: Test bindings on Linux-x64-gnu - node@16
     needs:
