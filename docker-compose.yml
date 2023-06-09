@@ -8,5 +8,5 @@ services:
       - .:/app
     working_dir: /app
     command: >
-      /bin/sh -c "cargo nextest run && npm run build"
+      /bin/sh -c "cargo nextest run && npm install && npm run build && strip *.node"
 
