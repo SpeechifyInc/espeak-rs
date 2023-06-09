@@ -28,3 +28,5 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Install testing framework
 RUN cargo install cargo-nextest
+
+RUN npm install -g @napi-rs/cli
