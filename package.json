@@ -21,10 +21,9 @@
     "node": ">= 16"
   },
   "scripts": {
-    "prepare": "git apply espeakng-rs.patch --directory=espeakng-rs || true",
     "artifacts": "napi artifacts",
-    "build": "npm run prepare && napi build --features napi --platform --release",
-    "build:debug": "npm run prepare && napi build --features napi --platform",
+    "build": "napi build --features napi --platform --release",
+    "build:debug": "napi build --features napi --platform",
     "prepublishOnly": "napi prepublish -t npm",
     "test": "ava",
     "version": "napi version"

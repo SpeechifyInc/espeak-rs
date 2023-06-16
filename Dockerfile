@@ -35,4 +35,4 @@ RUN pip3 install --upgrade pip
 
 RUN pip3 install maturin
 
-
+RUN npm install -g @napi-rs/cli
