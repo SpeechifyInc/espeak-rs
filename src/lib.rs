@@ -325,6 +325,7 @@ pub fn phoneme_to_word(phoneme: &str) -> String {
 
 /// A Python module implemented in Rust.
 #[pymodule]
+#[cfg(feature = "pyo3")]
 fn espeak_rs(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
   use frontend::py;
   m.add_function(wrap_pyfunction!(py::phonemize, m)?)?;
