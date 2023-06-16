@@ -1,320 +1,314 @@
-use napi_derive::napi;
 use once_cell::sync::Lazy;
 use regex::Regex;
 
 use crate::{
-  leven::get_average_leven, text_to_phonemes, transform_raw_phoneme_timestamps, Chunk, NestedChunk,
-  PhonemeChunk,
+    leven::get_average_leven, text_to_phonemes, transform_raw_phoneme_timestamps, Chunk,
+    NestedChunk, PhonemeChunk,
 };
 
-#[napi]
-pub async fn force_align_phonemes_graphemes(
-  text: String,
-  phonemes: String,
-  align_phonemes: bool,
+pub fn force_align_phonemes_graphemes(
+    text: String,
+    phonemes: String,
+    align_phonemes: bool,
 ) -> NestedChunk {
-  let mut chunk = align_phonemes_graphemes(
-    text.as_str(),
-    (0..phonemes.len()).map(|_| 0.0).collect::<Vec<f64>>(),
-    phonemes
-      .chars()
-      .map(|string| string.to_string())
-      .collect::<Vec<String>>()
-      .iter()
-      .map(|string| string.as_str())
-      .collect(),
-    align_phonemes,
-  )
-  .await;
-  chunk.start_time = chunk
-    .chunks
-    .get(0)
-    .map(|chunk| chunk.start_time)
-    .unwrap_or(0.0);
-  chunk.end_time = chunk
-    .chunks
-    .get(0)
-    .map(|chunk| chunk.end_time)
-    .unwrap_or(0.0);
-  chunk
+    let mut chunk = align_phonemes_graphemes(
+        text.as_str(),
+        (0..phonemes.len()).map(|_| 0.0).collect::<Vec<f64>>(),
+        phonemes
+            .chars()
+            .map(|string| string.to_string())
+            .collect::<Vec<String>>()
+            .iter()
+            .map(|string| string.as_str())
+            .collect(),
+        align_phonemes,
+    );
+    chunk.start_time = chunk
+        .chunks
+        .get(0)
+        .map(|chunk| chunk.start_time)
+        .unwrap_or(0.0);
+    chunk.end_time = chunk
+        .chunks
+        .get(0)
+        .map(|chunk| chunk.end_time)
+        .unwrap_or(0.0);
+    chunk
 }
 
-#[napi]
-pub async fn force_align_phonemes_graphemes_list(
-  text: String,
-  end_times: Vec<f64>,
-  phonemes_list: Vec<String>,
-  align_phonemes: bool,
+pub fn force_align_phonemes_graphemes_list(
+    text: String,
+    end_times: Vec<f64>,
+    phonemes_list: Vec<String>,
+    align_phonemes: bool,
 ) -> NestedChunk {
-  let mut chunk = align_phonemes_graphemes(
-    text.as_str(),
-    end_times,
-    phonemes_list.iter().map(|string| string.as_str()).collect(),
-    align_phonemes,
-  )
-  .await;
-  chunk.start_time = chunk
-    .chunks
-    .get(0)
-    .map(|chunk| chunk.start_time)
-    .unwrap_or(0.0);
-  chunk.end_time = chunk
-    .chunks
-    .get(0)
-    .map(|chunk| chunk.end_time)
-    .unwrap_or(0.0);
-  chunk
+    let mut chunk = align_phonemes_graphemes(
+        text.as_str(),
+        end_times,
+        phonemes_list.iter().map(|string| string.as_str()).collect(),
+        align_phonemes,
+    );
+    chunk.start_time = chunk
+        .chunks
+        .get(0)
+        .map(|chunk| chunk.start_time)
+        .unwrap_or(0.0);
+    chunk.end_time = chunk
+        .chunks
+        .get(0)
+        .map(|chunk| chunk.end_time)
+        .unwrap_or(0.0);
+    chunk
 }
 
-pub async fn align_phonemes_graphemes(
-  text: &str,
-  end_times: Vec<f64>,
-  phonemes_list: Vec<&str>,
-  align_phonemes: bool,
+pub fn align_phonemes_graphemes(
+    text: &str,
+    end_times: Vec<f64>,
+    phonemes_list: Vec<&str>,
+    align_phonemes: bool,
 ) -> NestedChunk {
-  let phonemes = transform_raw_phoneme_timestamps(&phonemes_list, &end_times);
+    let phonemes = transform_raw_phoneme_timestamps(&phonemes_list, &end_times);
 
-  let chunk: NestedChunk = NestedChunk {
-    value: if align_phonemes {
-      phonemes_list.join("")
-    } else {
-      text.to_string()
-    },
-    start_time: 0.0,
-    end_time: 0.0,
-    start: 0.0,
-    end: if align_phonemes {
-      phonemes_list.len() as f64
-    } else {
-      text.chars().count() as f64
-    },
-    chunks: Vec::new(),
-  };
+    let chunk: NestedChunk = NestedChunk {
+        value: if align_phonemes {
+            phonemes_list.join("")
+        } else {
+            text.to_string()
+        },
+        start_time: 0.0,
+        end_time: 0.0,
+        start: 0.0,
+        end: if align_phonemes {
+            phonemes_list.len() as f64
+        } else {
+            text.chars().count() as f64
+        },
+        chunks: Vec::new(),
+    };
 
-  let mut chunks: Vec<Chunk> = Vec::new();
+    let mut chunks: Vec<Chunk> = Vec::new();
 
-  let mut phoneme_index = 0;
-  let mut words: Vec<Chunk> = split_text_to_word_chunks(text);
+    let mut phoneme_index = 0;
+    let mut words: Vec<Chunk> = split_text_to_word_chunks(text);
 
-  for word_index in 0..words.len() {
-    let word = words.get_mut(word_index).unwrap();
-    if phoneme_index >= phonemes.len() {
-      break;
-    }
-    let phoneme = phonemes.get(phoneme_index).unwrap();
+    for word_index in 0..words.len() {
+        let word = words.get_mut(word_index).unwrap();
+        if phoneme_index >= phonemes.len() {
+            break;
+        }
+        let phoneme = phonemes.get(phoneme_index).unwrap();
 
-    let mut word = word.clone();
+        let mut word = word.clone();
 
-    // Fill word with data
-    word.start_time = chunk
-      .chunks
-      .last()
-      .map(|chunk| chunk.end_time)
-      .unwrap_or(phonemes[phoneme_index].start_time);
-    word.end_time = phonemes[phoneme_index].end_time;
+        // Fill word with data
+        word.start_time = chunk
+            .chunks
+            .last()
+            .map(|chunk| chunk.end_time)
+            .unwrap_or(phonemes[phoneme_index].start_time);
+        word.end_time = phonemes[phoneme_index].end_time;
 
-    if align_phonemes {
-      word.start = phoneme.start;
-      word.end = phoneme.end;
-    }
+        if align_phonemes {
+            word.start = phoneme.start;
+            word.end = phoneme.end;
+        }
 
-    let is_desync_detected = get_average_leven(
-      &words,
-      &phonemes,
-      word_index,
-      phoneme_index,
-      usize::min(3, words.len() - word_index - 1).min(phonemes.len() - phoneme_index - 1),
-      "forward",
-    ) > 0.6;
+        let is_desync_detected = get_average_leven(
+            &words,
+            &phonemes,
+            word_index,
+            phoneme_index,
+            usize::min(3, words.len() - word_index - 1).min(phonemes.len() - phoneme_index - 1),
+            "forward",
+        ) > 0.6;
 
-    // Handle numbers. 2021 -> two thousand twenty one and anything else
-    // that isComplex deems as too complicated for regular handling
-    if is_complex(word.value.as_str()) {
-      // Convert to phonemes and check how many words it was
-      let word_phonemes = text_to_phonemes(word.value.as_str());
-      let word_phoneme_word_count = usize::max(
-        1,
-        word_phonemes
-          .split(' ')
-          .filter(|string| !string.is_empty())
-          .count(),
-      );
+        // Handle numbers. 2021 -> two thousand twenty one and anything else
+        // that isComplex deems as too complicated for regular handling
+        if is_complex(word.value.as_str()) {
+            // Convert to phonemes and check how many words it was
+            let word_phonemes = text_to_phonemes(word.value.as_str());
+            let word_phoneme_word_count = usize::max(
+                1,
+                word_phonemes
+                    .split(' ')
+                    .filter(|string| !string.is_empty())
+                    .count(),
+            );
 
-      phoneme_index += word_phoneme_word_count - 1;
-      word.end_time = phonemes
-        .get(phoneme_index)
-        .map(|chunk| chunk.clone().end_time)
-        .unwrap_or(phonemes[phonemes.len() - 1].end_time);
-      if align_phonemes {
-        word.end = phonemes[usize::min(phoneme_index, phonemes.len() - 1)].end
-      };
-    }
-    // Detect and resolve desync
-    else if is_desync_detected {
-      // More accurately detect desyncing
-      let offset =
-        get_closest_correct_word_offset(&words, &phonemes, word_index, phoneme_index, 3, 8);
+            phoneme_index += word_phoneme_word_count - 1;
+            word.end_time = phonemes
+                .get(phoneme_index)
+                .map(|chunk| chunk.clone().end_time)
+                .unwrap_or(phonemes[phonemes.len() - 1].end_time);
+            if align_phonemes {
+                word.end = phonemes[usize::min(phoneme_index, phonemes.len() - 1)].end
+            };
+        }
+        // Detect and resolve desync
+        else if is_desync_detected {
+            // More accurately detect desyncing
+            let offset =
+                get_closest_correct_word_offset(&words, &phonemes, word_index, phoneme_index, 3, 8);
 
-      if offset > 0 && word_index > 0 {
-        let previous_word = words.get_mut(word_index - 1).unwrap();
+            if offset > 0 && word_index > 0 {
+                let previous_word = words.get_mut(word_index - 1).unwrap();
 
-        let start_time = previous_word.start_time;
-        let end_time = previous_word.end_time;
-        let middle_time = (end_time - start_time) / 2.0 + start_time;
+                let start_time = previous_word.start_time;
+                let end_time = previous_word.end_time;
+                let middle_time = (end_time - start_time) / 2.0 + start_time;
 
-        previous_word.end_time = middle_time;
-        word.start_time = middle_time;
-        word.end_time = end_time;
-        phoneme_index -= 1;
-      } else if offset < 0 {
+                previous_word.end_time = middle_time;
+                word.start_time = middle_time;
+                word.end_time = end_time;
+                phoneme_index -= 1;
+            } else if offset < 0 {
+                phoneme_index += 1;
+                word.end_time = phonemes[phoneme_index - 1].end_time;
+            }
+        }
+
+        if align_phonemes {
+            word.value = phonemes_list[(word.start as usize)..(word.end as usize)].join("");
+        }
+
         phoneme_index += 1;
-        word.end_time = phonemes[phoneme_index - 1].end_time;
-      }
+
+        chunks.push(word);
     }
 
-    if align_phonemes {
-      word.value = phonemes_list[(word.start as usize)..(word.end as usize)].join("");
+    NestedChunk {
+        value: chunk.value,
+        start: chunk.start,
+        end: chunk.end,
+        start_time: chunk.start_time,
+        end_time: chunk.end_time,
+        chunks,
     }
-
-    phoneme_index += 1;
-
-    chunks.push(word);
-  }
-
-  NestedChunk {
-    value: chunk.value,
-    start: chunk.start,
-    end: chunk.end,
-    start_time: chunk.start_time,
-    end_time: chunk.end_time,
-    chunks,
-  }
 }
 
 fn split_text_to_word_chunks(text: &str) -> Vec<Chunk> {
-  // TODO: Replace with reduce or map with accumulator
-  let mut character_counter = 0;
-  let ignored_chars = [',', '.', '?', '!', ':', '[', ']', '{', '}', '"', ' ', '\n'];
+    // TODO: Replace with reduce or map with accumulator
+    let mut character_counter = 0;
+    let ignored_chars = [',', '.', '?', '!', ':', '[', ']', '{', '}', '"', ' ', '\n'];
 
-  return text
-    .split_inclusive(ignored_chars)
-    .filter_map(|word| -> Option<Chunk> {
-      // We use .chars().count() to get the number of characters rather than
-      // the number of bytes
-      let full_word_len = word.chars().count();
+    return text
+        .split_inclusive(ignored_chars)
+        .filter_map(|word| -> Option<Chunk> {
+            // We use .chars().count() to get the number of characters rather than
+            // the number of bytes
+            let full_word_len = word.chars().count();
 
-      // Remove the punctuation the end
-      let trimmed_word = word
-        .chars()
-        .filter(|char| !ignored_chars.contains(char))
-        .collect::<String>();
-      let trimmed_word_len = trimmed_word.chars().count();
+            // Remove the punctuation the end
+            let trimmed_word = word
+                .chars()
+                .filter(|char| !ignored_chars.contains(char))
+                .collect::<String>();
+            let trimmed_word_len = trimmed_word.chars().count();
 
-      let start = character_counter;
-      let end = character_counter + trimmed_word_len;
+            let start = character_counter;
+            let end = character_counter + trimmed_word_len;
 
-      // Track the number of chars we've reached
-      if word != "CS" {
-        character_counter += full_word_len
-      };
+            // Track the number of chars we've reached
+            if word != "CS" {
+                character_counter += full_word_len
+            };
 
-      // If it's not a word, continue
-      if !is_word(trimmed_word.as_str()) {
-        return None;
-      }
+            // If it's not a word, continue
+            if !is_word(trimmed_word.as_str()) {
+                return None;
+            }
 
-      // Otherwise, add the word to our list
-      Some(Chunk {
-        value: trimmed_word,
-        start: start as f64,
-        start_time: 0.0,
-        end: end as f64,
-        end_time: 0.0,
-      })
-    })
-    .collect();
+            // Otherwise, add the word to our list
+            Some(Chunk {
+                value: trimmed_word,
+                start: start as f64,
+                start_time: 0.0,
+                end: end as f64,
+                end_time: 0.0,
+            })
+        })
+        .collect();
 }
 
 pub static REGEX_COMPLEX_ACRONYM: Lazy<Regex> =
-  Lazy::new(|| Regex::new("(.*[A-Z].*){2,}").unwrap());
+    Lazy::new(|| Regex::new("(.*[A-Z].*){2,}").unwrap());
 pub static REGEX_COMPLEX_NUMBERS: Lazy<Regex> = Lazy::new(|| Regex::new("[\\p{N}]").unwrap());
 pub static REGEX_COMPLEX_SPECIAL_CHARS: Lazy<Regex> =
-  Lazy::new(|| Regex::new("[/\\\\(){}\\[\\]+@=]").unwrap());
+    Lazy::new(|| Regex::new("[/\\\\(){}\\[\\]+@=]").unwrap());
 pub static REGEX_WORD: Lazy<Regex> = Lazy::new(|| {
-  Regex::new("[\\p{L}\\p{N}$¢£¤¥֏؋߾߿৲৳৻૱௹฿៛₠₡₢₣₤₥₦₧₨₩₪₫€₭₮₯₰₱₲₳₴₵₶₷₸₹₺₻₼₽₾₿꠸﷼﹩＄￠￡￥￦𑿝𑿞𑿟𑿠𞋿𞲰]")
-    .unwrap()
+    Regex::new("[\\p{L}\\p{N}$¢£¤¥֏؋߾߿৲৳৻૱௹฿៛₠₡₢₣₤₥₦₧₨₩₪₫€₭₮₯₰₱₲₳₴₵₶₷₸₹₺₻₼₽₾₿꠸﷼﹩＄￠￡￥￦𑿝𑿞𑿟𑿠𞋿𞲰]")
+        .unwrap()
 });
 
 fn is_complex(string: &str) -> bool {
-  REGEX_COMPLEX_ACRONYM.is_match(string)
-    || REGEX_COMPLEX_NUMBERS.is_match(string)
-    || REGEX_COMPLEX_SPECIAL_CHARS.is_match(string)
+    REGEX_COMPLEX_ACRONYM.is_match(string)
+        || REGEX_COMPLEX_NUMBERS.is_match(string)
+        || REGEX_COMPLEX_SPECIAL_CHARS.is_match(string)
 }
 
 // Originally used \p{Sc} but rust doesnt have support so pulled it from
 // https://www.compart.com/en/unicode/category/Sc
 fn is_word(word: &str) -> bool {
-  REGEX_WORD.is_match(word)
+    REGEX_WORD.is_match(word)
 }
 
-/**
- * Takes a wordIndex and phonemeIndex and finds the offset that will minimize the value from
- * the custom leven phoneme algorithm. Starts from the initial index and looks to the left
- * and right indices until the maxOffset is reached
- */
+/// Takes a wordIndex and phonemeIndex and finds the offset that will minimize the value from
+/// the custom leven phoneme algorithm. Starts from the initial index and looks to the left
+/// and right indices until the maxOffset is reached
 fn get_closest_correct_word_offset(
-  words: &Vec<Chunk>,
-  phonemes: &Vec<PhonemeChunk>,
-  word_index: usize,
-  phoneme_index: usize,
-  max_offset: usize,
-  max_distance: usize,
+    words: &Vec<Chunk>,
+    phonemes: &Vec<PhonemeChunk>,
+    word_index: usize,
+    phoneme_index: usize,
+    max_offset: usize,
+    max_distance: usize,
 ) -> isize {
-  let word_index = word_index as isize;
-  let phoneme_index = phoneme_index as isize;
-  let max_distance = max_distance as isize;
-  let max_offset = max_offset as isize;
+    let word_index = word_index as isize;
+    let phoneme_index = phoneme_index as isize;
+    let max_distance = max_distance as isize;
+    let max_offset = max_offset as isize;
 
-  // Given wordIndex = 3, maxOffset = 4, words.length = 10, generates [-3, -2, -1, 0, 1, 2, 3, 4]
-  let word_index_offsets = (0..(max_offset * 2 + 1))
-    .enumerate()
-    .map(|(i, _)| max_offset - (i as isize))
-    .filter(|i| {
-      i + word_index >= 0
-        && i + word_index + max_distance < (words.len() as isize)
-        && phoneme_index + max_distance < (phonemes.len() as isize)
-    })
-    .collect::<Vec<_>>(); // Prevents offsets that go out of bounds
+    // Given wordIndex = 3, maxOffset = 4, words.length = 10, generates [-3, -2, -1, 0, 1, 2, 3, 4]
+    let word_index_offsets = (0..(max_offset * 2 + 1))
+        .enumerate()
+        .map(|(i, _)| max_offset - (i as isize))
+        .filter(|i| {
+            i + word_index >= 0
+                && i + word_index + max_distance < (words.len() as isize)
+                && phoneme_index + max_distance < (phonemes.len() as isize)
+        })
+        .collect::<Vec<_>>(); // Prevents offsets that go out of bounds
 
-  if word_index_offsets.is_empty() {
-    return 0;
-  }
-  let average_leven_values = word_index_offsets
-    .iter()
-    .map(|offset| {
-      get_average_leven(
-        words,
-        phonemes,
-        (word_index + offset) as usize,
-        phoneme_index as usize,
-        max_distance as usize,
-        "forward",
-      )
-    })
-    .collect::<Vec<_>>();
+    if word_index_offsets.is_empty() {
+        return 0;
+    }
+    let average_leven_values = word_index_offsets
+        .iter()
+        .map(|offset| {
+            get_average_leven(
+                words,
+                phonemes,
+                (word_index + offset) as usize,
+                phoneme_index as usize,
+                max_distance as usize,
+                "forward",
+            )
+        })
+        .collect::<Vec<_>>();
 
-  let lowest_leven_value = average_leven_values
-    .clone()
-    .into_iter()
-    .reduce(|a, b| a.min(b))
-    .unwrap();
-  if lowest_leven_value > 0.4 {
-    return 0;
-  }
+    let lowest_leven_value = average_leven_values
+        .clone()
+        .into_iter()
+        .reduce(|a, b| a.min(b))
+        .unwrap();
+    if lowest_leven_value > 0.4 {
+        return 0;
+    }
 
-  // TODO: Check from middle outwards to minimize offset in the case of identical mins. Given -> [0 1 2 3 4 5 6], Do -> [3 2 4 1 5 0 6]
-  word_index_offsets[average_leven_values
-    .into_iter()
-    .position(|a| a == lowest_leven_value)
-    .unwrap()]
+    // TODO: Check from middle outwards to minimize offset in the case of identical mins. Given ->
+    // [0 1 2 3 4 5 6], Do -> [3 2 4 1 5 0 6]
+    word_index_offsets[average_leven_values
+        .into_iter()
+        .position(|a| a == lowest_leven_value)
+        .unwrap()]
 }

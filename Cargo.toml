@@ -16,6 +16,13 @@ espeakng = { git = "https://github.com/SpeechifyInc/espeakNG-rs", features = ["s
 regex = "1"
 levenshtein = "1.0.5"
 once_cell = "1.17.1"
+pyo3 = { version = "0.19.0", features = ["extension-module"] }
+
+[features]
+napi-derive = []
+napi = ["napi-derive"]
+pyo3 = []
+default = []
 
 [build-dependencies]
 napi-build = "2.0.1"
@@ -23,7 +30,7 @@ napi-build = "2.0.1"
 [dev-dependencies]
 markov = "1.1.0"
 pretty_assertions = "1.2.1"
-criterion = { version = "0.4.0", features = ["async_tokio", "html_reports"] }
+criterion = { version = "0.5.1", features = ["async_tokio", "html_reports"] }
 tokio = { version = "1", features = ["rt", "macros"] }
 
 [profile.release]

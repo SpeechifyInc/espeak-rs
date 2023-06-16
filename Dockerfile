@@ -29,4 +29,10 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # Install testing framework
 RUN cargo install cargo-nextest
 
+RUN apt-get -y install python3 python3-pip python3-venv
+
+RUN pip3 install --upgrade pip
+
+RUN pip3 install maturin
+
 RUN npm install -g @napi-rs/cli

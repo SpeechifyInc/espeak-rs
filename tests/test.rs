@@ -63,44 +63,44 @@ use espeakng;
 
 #[test]
 fn markov_test_a_lot_threaded() -> Result<(), espeakng::Error> {
-  const N: u32 = 10000;
-  //   let chain = common::setup_markov().unwrap();
-  //   let _runner = EspeakRunner::new();
+    const N: u32 = 10000;
+    //   let chain = common::setup_markov().unwrap();
+    //   let _runner = EspeakRunner::new();
 
-  let join_handles = (1..N)
-    .map(|_| {
-      let mut speaker = espeakng::initialise(None).unwrap().lock();
-      let phonemes = speaker
-        .text_to_phonemes("The", espeakng::PhonemeGenOptions::Standard)
-        .unwrap()
-        .unwrap();
-      phonemes
-    })
-    .collect::<Vec<_>>();
+    let join_handles = (1..N)
+        .map(|_| {
+            let mut speaker = espeakng::initialise(None).unwrap().lock();
+            let phonemes = speaker
+                .text_to_phonemes("The", espeakng::PhonemeGenOptions::Standard)
+                .unwrap()
+                .unwrap();
+            phonemes
+        })
+        .collect::<Vec<_>>();
 
-  //   let join_handles = (1..N)
-  //     .map(|_| {
-  //       let espeak_handle = std::thread::spawn(move || {
-  //         let mut speaker = espeakng::initialise(None).unwrap().lock();
-  //         let phonemes = speaker
-  //           .text_to_phonemes("Hello", espeakng::PhonemeGenOptions::Standard)
-  //           .unwrap()
-  //           .unwrap();
-  //         println!("{}", phonemes);
-  //         phonemes
-  //       });
-  //       espeak_handle
-  //     })
-  //     .collect::<Vec<_>>();
+    //   let join_handles = (1..N)
+    //     .map(|_| {
+    //       let espeak_handle = std::thread::spawn(move || {
+    //         let mut speaker = espeakng::initialise(None).unwrap().lock();
+    //         let phonemes = speaker
+    //           .text_to_phonemes("Hello", espeakng::PhonemeGenOptions::Standard)
+    //           .unwrap()
+    //           .unwrap();
+    //         println!("{}", phonemes);
+    //         phonemes
+    //       });
+    //       espeak_handle
+    //     })
+    //     .collect::<Vec<_>>();
 
-  //   for handle in join_handles {
-  //     handle.join().unwrap();
-  //   }
+    //   for handle in join_handles {
+    //     handle.join().unwrap();
+    //   }
 
-  Result::Ok(())
+    Result::Ok(())
 
-  //   let futures = (1..N)
-  //     .map(|x| markov_test_once_async(&chain, x))
-  //     .collect::<Vec<_>>();
-  //   let _res = join_all(futures).await;
+    //   let futures = (1..N)
+    //     .map(|x| markov_test_once_async(&chain, x))
+    //     .collect::<Vec<_>>();
+    //   let _res = join_all(futures).await;
 }

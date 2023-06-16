@@ -10,6 +10,15 @@ const espeak = EspeakAddon.default()
 const phonemes = espeak.textToPhonemes('Hello world')
 ```
 
-## Building
+## Building napi
 
-`docker-compose up`
+- `docker-compose run espeak-rs`
+
+## Messing around CLI
+
+- `docker-compose run espeak-rs`
+
+## Building python
+
+- `docker-compose run espeak-rs-cli`
+- `maturin develop`
