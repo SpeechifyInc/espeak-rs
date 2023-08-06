@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:jammy
 
 # Set the DEBIAN_FRONTEND environment variable to 'noninteractive' to avoid prompts
 # In particular, this prevents tzdata from asking for the timezone
