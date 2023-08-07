@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     runs-on:
-      labels: ubuntu-latest-8-core
+      labels: ubuntu-latest
     strategy:
       matrix:
         platform: [ amd64, arm64 ]
