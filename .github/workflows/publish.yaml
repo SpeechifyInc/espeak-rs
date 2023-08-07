@@ -1,0 +1,77 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      level:
+        options:
+          - major
+          - minor
+        type: choice
+        default: minor
+        required: true
+
+jobs:
+  bump-version:
+    name: Bump Version
+    runs-on:
+      labels: ubuntu-latest-8-core
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.calver.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Cal Ver
+        uses: speechifyinc/calver-action@v1.20230620.0
+        id: calver
+        with:
+          level: ${{ github.event.inputs.level }}
+          token: ${{ github.token }}
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          tag_name: ${{ steps.calver.outputs.version }}
+
+  build:
+    name: Build
+    runs-on:
+      labels: ubuntu-latest-8-core
+    permissions:
+      contents: read
+      packages: write
+    needs: [bump-version]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          cache: "npm"
+          node-version-file: ".node-version"
+          scope: "@speechifyinc"
+
+      - name: Set package.json version
+        run: npm version ${{ needs.bump-version.outputs.version }} --no-git-tag-version
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          outputs: type=local,dest=.
+          target: binaries
+
+      - name: Authenticate to GitHub Packages
+        run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" > .npmrc
+
+      - name: Publish
+        run: npm publish

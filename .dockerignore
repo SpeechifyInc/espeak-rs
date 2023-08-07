@@ -6,6 +6,7 @@
 .github
 .idea
 .npmignore
+.venv
 .vscode
 README.md
 docker-compose.yml
