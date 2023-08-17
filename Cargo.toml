@@ -1,18 +1,18 @@
 [package]
 edition = "2021"
-name = "espeak-rs"
+name = "espeak-ng-rs"
 version = "0.0.0"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "espeak_rs"
+name = "espeak_ng_rs"
 path = "src/lib.rs"
 
 [dependencies]
 # https://nodejs.org/api/n-api.html#node-api-version-matrix
-napi = { version = "2.2.0", default-features = false, features = ["napi8", "async", "tokio_rt"] }
-napi-derive = "2.2.0"
-espeakng = { git = "https://github.com/SpeechifyInc/espeakNG-rs", features = ["static"] }
+napi = { version = "2.12.2", default-features = false, features = ["napi8", "async", "tokio_rt"] }
+napi-derive = "2.12.2"
+espeakng = { path = "./libs/bindings" }
 regex = "1"
 levenshtein = "1.0.5"
 once_cell = "1.17.1"
@@ -21,8 +21,6 @@ once_cell = "1.17.1"
 napi-build = "2.0.1"
 
 [dev-dependencies]
-markov = "1.1.0"
-pretty_assertions = "1.2.1"
 criterion = { version = "0.4.0", features = ["async_tokio", "html_reports"] }
 tokio = { version = "1", features = ["rt", "macros"] }
 

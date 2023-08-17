@@ -1,6 +1,6 @@
 {
   "name": "@speechifyinc/espeak-rs",
-  "version": "0.1.4",
+  "version": "0.0.0",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
@@ -8,6 +8,7 @@
     "triples": {
       "defaults": false,
       "additional": [
+        "aarch64-apple-darwin",
         "x86_64-unknown-linux-gnu"
       ]
     }
@@ -17,16 +18,17 @@
     "@napi-rs/cli": "^2.6.2",
     "ava": "^4.0.1"
   },
+  "ava": {
+    "timeout": "3m"
+  },
   "engines": {
-    "node": ">= 16"
+    "node": ">= 18"
   },
   "scripts": {
     "artifacts": "napi artifacts",
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
-    "prepublishOnly": "napi prepublish -t npm",
-    "test": "ava",
-    "version": "napi version"
+    "test": "ava"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
@@ -34,8 +36,5 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/SpeechifyInc/espeak-rs"
-  },
-  "optionalDependencies": {
-    "@speechifyinc/espeak-rs-linux-x64-gnu": "0.0.1"
   }
 }

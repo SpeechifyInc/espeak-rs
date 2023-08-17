@@ -36,12 +36,10 @@ jobs:
     runs-on:
       labels: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
+      id-token: write
       packages: write
-    needs: [ bump-version ]
-    strategy:
-      matrix:
-        platform: [ amd64, arm64 ]
+    needs: [bump-version]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -56,54 +54,17 @@ jobs:
       - name: Set package.json version
         run: npm version ${{ needs.bump-version.outputs.version }} --no-git-tag-version
 
-      - name: Setup QEMU
-        uses: docker/setup-qemu-action@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          platforms: linux/${{ matrix.platform }}
-
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ matrix.platform }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-${{ matrix.platform }}-
-
-      - name: Build
-        uses: docker/build-push-action@v4
+      - uses: depot/setup-action@v1
+      - uses: depot/build-push-action@v1
         with:
           context: .
+          project: hht03j11d7
           outputs: type=local,dest=.
           target: binaries
-          platforms: linux/${{ matrix.platform }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
+          platforms: linux/amd64,linux/arm64
 
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: binaries-${{ matrix.platform }}
-          path: |
-            rustav.*.node
-  release:
-    name: Release
-    runs-on:
-      labels: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-    needs:
-      - build
-      - bump-version
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - uses: actions/download-artifact@v3
+      - name: Flatten files
+        run: mv linux_arm64/* . && mv linux_amd64/* .
 
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -111,7 +72,9 @@ jobs:
           generate_release_notes: true
           tag_name: ${{ needs.bump-version.outputs.version }}
           files: |
-            **/rustav.*.node
+            *.node
+            index.d.ts
+            index.js
 
       - name: Authenticate to GitHub Packages
         run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" > .npmrc

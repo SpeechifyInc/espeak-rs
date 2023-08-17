@@ -1,7 +1,7 @@
 use criterion::BenchmarkId;
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
-use espeak_rs::phonetics::punctuation::extract_punctuation;
+use espeak_ng_rs::phonetics::punctuation::extract_punctuation;
 // This is a struct that tells Criterion.rs to use the "futures" crate's current-thread executor
 fn criterion_benchmark(c: &mut Criterion) {
   let input_text = "This, is a piece of text, that has punctuations.";

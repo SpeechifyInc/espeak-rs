@@ -1,0 +1,38 @@
+name: Build
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  build:
+    runs-on:
+      labels: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: depot/setup-action@v1
+
+      - uses: depot/build-push-action@v1
+        with:
+          context: .
+          project: hht03j11d7
+          outputs: type=local,dest=.
+          target: binaries
+          platforms: linux/amd64,linux/arm64
+
+      - name: Flatten files
+        run: mv linux_arm64/* . && mv linux_amd64/* .
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries
+          path: |
+            *.node
+            index.js
+            index.d.ts
