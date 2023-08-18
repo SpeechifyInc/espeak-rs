@@ -177,12 +177,19 @@ pub static ACRONYM_REGEX_SPLIT: Lazy<Regex> = Lazy::new(|| {
 
 pub fn text_to_phonemes(text: &str) -> String {
   let mut speaker = espeakng::initialise(Some("en-us")).unwrap().lock();
+  speaker.set_voice_raw("en-US").unwrap();
 
   text
     .split_inclusive([',', '.', '?', '!'])
     .map(|text| {
       speaker
-        .text_to_phonemes(text, espeakng::PhonemeGenOptions::Standard)
+        .text_to_phonemes(
+          text,
+          espeakng::PhonemeGenOptions::Standard {
+            text_mode: espeakng::TextMode::Utf8,
+            phoneme_mode: espeakng::PhonemeMode::IncludeZeroWidthJoiners,
+          },
+        )
         .unwrap()
         .unwrap()
     })
@@ -318,3 +325,4 @@ pub fn phoneme_to_word(phoneme: &str) -> String {
   }
   word
 }
+
